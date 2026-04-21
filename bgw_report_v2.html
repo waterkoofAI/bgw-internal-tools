@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>BGW Community Report v2</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+:root{--brand:#534AB7;--brand-d:rgba(83,74,183,0.09);--text:#1a1920;--text2:#5c5a6e;--text3:#9896a8;--bg:#f5f4f9;--bg2:#fff;--border:#e2e0ee;--green:#1a8a5f;--green-bg:#edf7f3;--red:#c0392b;--red-bg:#fdf1f0;--yellow:#b05b0a;--yellow-bg:#fef7ee;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:13px}
+.wrap{max-width:900px;margin:0 auto;padding:20px 16px 60px}
+/* header */
+.hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.hd-title{font-size:17px;font-weight:600;color:var(--brand);letter-spacing:-.02em}
+.hd-sub{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:1px}
+.mode-row{display:flex;gap:5px}
+.mbtn{padding:7px 16px;border-radius:7px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.mbtn.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+/* config */
+.cfg-bar{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:none}
+.cfg-bar.open{display:block}
+.cfg-inner{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cfg-inner input{flex:1;min-width:200px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:12px;font-family:'DM Mono',monospace;outline:none}
+.cfg-inner input:focus{border-color:var(--brand)}
+.cfg-btn{padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.cfg-btn:hover{background:var(--brand-d);border-color:var(--brand);color:var(--brand)}
+/* tabs */
+.tabs{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:3px;margin-bottom:16px}
+.ctab{flex:1;padding:7px;border:none;background:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text2);cursor:pointer;transition:all .15s;font-weight:400}
+.ctab.active{background:var(--brand);color:#fff;font-weight:500}
+.cfg-toggle{padding:7px 12px;border:none;background:none;color:var(--text3);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;border-left:1px solid var(--border);margin-left:2px}
+.cfg-toggle:hover{color:var(--brand)}
+/* panels */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:16px;margin-bottom:12px}
+.pt{font-size:11px;font-weight:600;color:var(--brand);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.pt::after{content:'';flex:1;height:1px;background:var(--border)}
+/* fields */
+.ig3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.ig2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ig5{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.f{display:flex;flex-direction:column;gap:3px}
+.f label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+.f input,.f select{padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s}
+.f input:focus,.f select:focus{border-color:var(--brand);background:#fff}
+.dlbl{font-size:10px;color:var(--text3);margin-bottom:3px;text-align:center}
+.ig5 input{width:100%;padding:5px 4px;border:1px solid var(--border);border-radius:5px;background:#fff;color:var(--text);font-size:13px;font-family:'DM Mono',monospace;text-align:right;outline:none}
+.ig5 input:focus{border-color:var(--brand)}
+.rl{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;margin-top:10px}
+.rl:first-child{margin-top:0}
+/* summary cards */
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.scard{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.sc-l{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.sc-v{font-size:20px;font-weight:600;font-family:'DM Mono',monospace;color:var(--text)}
+.delta{font-size:11px;font-weight:500;margin-top:1px}
+.up{color:var(--green)}.dn{color:var(--red)}.fl{color:var(--text3)}
+/* complaints */
+.chdr{display:grid;grid-template-columns:1fr 60px 110px 30px;gap:5px;margin-bottom:4px}
+.chdr span{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
+.crow{display:grid;grid-template-columns:1fr 60px 110px 30px;gap:5px;align-items:center;margin-bottom:5px}
+.crow input,.crow select{width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none}
+.crow input:focus,.crow select:focus{border-color:var(--brand);background:#fff}
+.rm-btn{width:30px;height:30px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text3);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.rm-btn:hover{background:var(--red-bg);border-color:#f5c6c6;color:var(--red)}
+.add-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:1px dashed var(--border);border-radius:6px;background:none;color:var(--text2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .12s;margin-top:3px}
+.add-btn:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-d)}
+/* score */
+.stbl{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:12px}
+.stbl th{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;padding:4px 7px;border-bottom:1px solid var(--border);text-align:left}
+.stbl td{padding:6px 7px;border-bottom:1px solid var(--bg)}
+.stbl tr:last-child td{border-bottom:none}
+.stbl select{padding:3px 5px;border:1px solid var(--border);border-radius:5px;background:var(--bg);color:var(--text);font-size:12px;font-family:'DM Mono',monospace;outline:none;cursor:pointer}
+.stbl select:focus{border-color:var(--brand)}
+.stbl input[type=text]{width:100%;padding:3px 6px;border:1px solid var(--border);border-radius:5px;background:var(--bg);color:var(--text);font-size:11px;font-family:'DM Sans',sans-serif;outline:none}
+.stbl input[type=text]:focus{border-color:var(--brand);background:#fff}
+.score-disp{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--brand-d);border:1px solid rgba(83,74,183,0.15);border-radius:8px}
+.score-num{font-size:30px;font-weight:600;font-family:'DM Mono',monospace;color:var(--brand);line-height:1}
+.score-den{font-size:13px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:5px}
+.score-bar-w{flex:1}
+.score-bar-l{font-size:11px;color:var(--text2);margin-bottom:4px}
+.score-bar{height:7px;background:rgba(83,74,183,0.12);border-radius:4px;overflow:hidden}
+.score-fill{height:7px;background:var(--brand);border-radius:4px;transition:width .4s}
+/* sat */
+.sat-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.sat-f{display:flex;align-items:center;gap:7px}
+.sat-f label{font-size:12px;color:var(--text2);white-space:nowrap}
+.sat-f input{width:70px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:14px;font-family:'DM Mono',monospace;font-weight:500;outline:none;text-align:center}
+.sat-f input:focus{border-color:var(--brand);background:#fff}
+.sat-badge{padding:5px 12px;background:var(--green-bg);border:1px solid rgba(26,138,95,.2);border-radius:6px;font-size:12px;color:var(--green);font-weight:500}
+/* submit button */
+.submit-btn{width:100%;padding:12px;border-radius:9px;border:none;background:var(--brand);color:#fff;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:4px;transition:opacity .15s}
+.submit-btn:hover{opacity:.88}
+.submit-btn:disabled{opacity:.5;cursor:default}
+/* CM mode */
+.cm-today{padding:14px 16px;border-radius:10px;border:1px solid var(--border);margin-bottom:14px;display:flex;align-items:center;gap:14px;background:var(--bg2)}
+.cm-today.submitted{border-color:rgba(26,138,95,.3);background:var(--green-bg)}
+.cm-today.missing{border-color:rgba(192,57,43,.25);background:var(--red-bg)}
+.cm-today-icon{font-size:24px;line-height:1}
+.cm-today-main{font-size:13px;font-weight:500;color:var(--text)}
+.cm-today-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.cm-today-meta{margin-left:auto;text-align:right;font-size:11px;color:var(--text3)}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:600px){.charts-grid{grid-template-columns:1fr}}
+.chart-panel{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:14px}
+.chart-panel-title{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.chart-panel-sub{font-size:10px;color:var(--text3);font-weight:400}
+.cleg{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.li{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)}
+.lsq{width:7px;height:7px;border-radius:2px;display:inline-block}
+.ld{width:12px;border-top:2px dashed;display:inline-block}
+/* history */
+.history-panel{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:14px;margin-bottom:12px}
+.hist-title{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.hist-table{width:100%;border-collapse:collapse;font-size:12px}
+.hist-table th{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;padding:5px 8px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+.hist-table td{padding:6px 8px;border-bottom:1px solid var(--bg);vertical-align:middle}
+.hist-table tr:last-child td{border-bottom:none}
+.hist-table tr:hover td{background:var(--bg)}
+.score-pill{display:inline-block;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:500;font-family:'DM Mono',monospace}
+.score-10{background:#edf7f3;color:#1a8a5f}
+.score-hi{background:#fff8e6;color:#b05b0a}
+.score-lo{background:#fdf1f0;color:#c0392b}
+.no-data{text-align:center;padding:30px;color:var(--text3);font-size:13px}
+/* refresh btn */
+.refresh-btn{padding:5px 11px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .12s}
+.refresh-btn:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-d)}
+/* toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1920;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;z-index:999;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.success{background:#1a8a5f}
+.toast.error{background:#c0392b}
+/* report card (for html2canvas PNG export) */
+#rc-stage{position:absolute;left:-9999px;top:0;z-index:-1}
+.rc{width:640px;background:#fff;font-family:'DM Sans',sans-serif;color:#1a1920;border-radius:0}
+.rc-hd{background:#534AB7;padding:20px 24px 16px;color:#fff;display:flex;justify-content:space-between;align-items:flex-start}
+.rc-brand{font-size:10px;opacity:.7;font-weight:600;letter-spacing:.07em}
+.rc-title{font-size:17px;font-weight:700;margin:4px 0 2px;letter-spacing:-.02em}
+.rc-meta{font-size:12px;opacity:.75}
+.rc-date-big{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;opacity:.9;text-align:right;line-height:1.2}
+.rc-body{padding:20px 24px 16px}
+.rc-kpi-row{display:flex;gap:10px;margin-bottom:14px}
+.rc-kpi{flex:1;background:#f5f4f9;border-radius:8px;padding:11px;border:1px solid #e5e3f5}
+.rc-kpi-l{font-size:10px;color:#9896a8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;font-weight:600}
+.rc-kpi-v{font-size:19px;font-weight:700;color:#1a1920;font-family:'DM Mono',monospace}
+.rc-kpi-d{font-size:11px;margin-top:2px;font-weight:500}
+.rc-sec{margin-bottom:13px}
+.rc-sec-title{font-size:10px;font-weight:700;color:#534AB7;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid #e9e7f8}
+.rc-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid #f2f2f5}
+.rc-row:last-child{border-bottom:none}
+.rc-rv{font-weight:600;color:#534AB7}
+.rc-bar-bg{height:6px;background:#e9e7f8;border-radius:3px;margin-top:5px}
+.rc-bar-fill{height:6px;background:#534AB7;border-radius:3px}
+.rc-ft{background:#f5f4f9;padding:10px 24px;font-size:10px;color:#9896a8;display:flex;justify-content:space-between;border-top:1px solid #e5e3f5}
+/* export bars */
+.exp-bar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.exp-bar-panel{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:12px}
+.exp-btn{padding:7px 15px;border-radius:7px;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;border:1px solid var(--border);background:var(--bg2);color:var(--text)}
+.exp-btn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+.exp-btn:hover{opacity:.85}
+.exp-date-sel{padding:6px 9px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);font-size:12px;font-family:'DM Mono',monospace;outline:none;cursor:pointer}
+.exp-date-sel:focus{border-color:var(--brand)}
+.exp-hint{font-size:11px;color:var(--text3)}
+.notes-g{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* mod tags */
+.mod-tag{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:var(--brand-d);border:1px solid rgba(83,74,183,.2);border-radius:20px;font-size:12px;color:var(--brand);font-weight:500}
+.mod-tag button{background:none;border:none;color:var(--brand);cursor:pointer;font-size:14px;line-height:1;padding:0 0 0 2px;opacity:.55}
+.mod-tag button:hover{opacity:1}
+/* multi-mod score cards */
+.mscard{border:1px solid var(--border);border-radius:9px;padding:12px 14px;margin-bottom:10px;background:var(--bg)}
+.mscard-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.mscard-name{font-size:13px;font-weight:600;color:var(--brand);background:var(--brand-d);padding:3px 12px;border-radius:20px}
+.mscard-total{font-size:13px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);margin-left:auto}
+.mscard-rm{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px}
+.mscard-rm:hover{color:var(--red)}
+.msdims{display:flex;flex-direction:column;gap:6px}
+.msdim-row{display:grid;grid-template-columns:1fr 68px;gap:8px;align-items:center}
+.msdim-lbl{font-size:12px;color:var(--text2)}
+.msdim-sel{padding:4px 6px;border:1px solid var(--border);border-radius:5px;background:var(--bg2);color:var(--text);font-size:12px;font-family:'DM Mono',monospace;outline:none;cursor:pointer;width:100%}
+.msdim-sel:focus{border-color:var(--brand)}
+@media(max-width:500px){.notes-g{grid-template-columns:1fr}.ig3{grid-template-columns:1fr 1fr}.charts-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="hd">
+    <div>
+      <div class="hd-title">BGW Community Report</div>
+      <div class="hd-sub">WaterkoofAI Workshop · v2</div>
+    </div>
+    <div class="mode-row">
+      <button class="mbtn active" id="btn-mod" onclick="setMode('mod')">📝 Mod (Fill)</button>
+      <button class="mbtn" id="btn-cm" onclick="setMode('cm')">📊 CM (View)</button>
+    </div>
+  </div>
+
+  <!-- Config bar -->
+  <div class="cfg-bar" id="cfg-bar">
+    <div style="font-size:11px;color:var(--text2);margin-bottom:7px;font-weight:500">Google Sheets Backend — paste your Apps Script URL for cross-device data sync</div>
+    <div class="cfg-inner">
+      <input type="text" id="gas-url" placeholder="https://script.google.com/macros/s/YOUR_ID/exec">
+      <button class="cfg-btn" onclick="saveConfig()">💾 Save</button>
+      <button class="cfg-btn" onclick="syncData()">🔄 Sync now</button>
+      <span id="cfg-status" style="font-size:11px;color:var(--green)"></span>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:6px">No URL? The tool works offline with browser storage — data stays on this device only.</div>
+  </div>
+
+  <!-- Community tabs -->
+  <div class="tabs">
+    <button class="ctab active" id="ctab-en" onclick="setCom('en',this)">EN Community</button>
+    <button class="ctab" id="ctab-cn" onclick="setCom('cn',this)">中文社区</button>
+    <button class="ctab" id="ctab-pred" onclick="setCom('pred',this)">Prediction Group</button>
+    <button class="cfg-toggle" onclick="toggleCfg()">⚙ Config</button>
+  </div>
+
+  <!-- MOD VIEW -->
+  <div id="mod-view">
+    <div class="panel" id="basic-panel">
+      <div class="pt" id="pt-basic">Basic Info</div>
+      <div style="display:grid;grid-template-columns:160px 1fr;gap:12px;align-items:start">
+        <div class="f"><label id="lbl-date">Date</label><input type="date" id="mod-date"></div>
+        <div class="f">
+          <label id="lbl-mods">Mods on duty</label>
+          <div style="display:flex;gap:6px">
+            <input type="text" id="mod-name-input" placeholder="Type name then ＋" style="flex:1;padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none" onkeydown="if(event.key==='Enter'){addMod();event.preventDefault()}">
+            <button onclick="addMod()" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--brand);font-size:16px;cursor:pointer;line-height:1">＋</button>
+          </div>
+          <div id="mod-tags" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;min-height:20px"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="pt" id="pt-nums">Today's Numbers</div>
+      <div class="rl">Total members (snapshot at end of day)</div>
+      <div class="ig5">
+        <div style="grid-column:span 2"><input type="number" id="mod-tot" placeholder="e.g. 1270" min="0"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+        <div class="f"><label>New members today</label><input type="number" id="mod-new" placeholder="e.g. 22" min="0"></div>
+        <div class="f" id="f-msgs"><label id="lbl-msgs">Messages today</label><input type="number" id="mod-msgs" placeholder="e.g. 410" min="0"></div>
+        <div class="f" id="f-active"><label id="lbl-active">Active users today</label><input type="number" id="mod-active" placeholder="e.g. 102" min="0"></div>
+        <div class="f" id="f-ugc" style="display:none"><label id="lbl-ugc">UGC posts today</label><input type="number" id="mod-ugc" placeholder="e.g. 18" min="0"></div>
+        <div class="f" id="f-preds" style="display:none"><label>Predictions shared today</label><input type="number" id="mod-preds" placeholder="e.g. 24" min="0"></div>
+        <div class="f" id="f-core" style="display:none"><label>Core active users today</label><input type="number" id="mod-core" placeholder="e.g. 18" min="0"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="complaints-panel">
+      <div class="pt">Customer Complaints</div>
+      <div class="chdr"><span>Business / issue type</span><span>Count</span><span>Avg speed</span><span></span></div>
+      <div id="mod-complaints"></div>
+      <button class="add-btn" onclick="addC()">＋ Add category</button>
+    </div>
+
+    <div class="panel" id="score-panel">
+      <div class="pt" id="pt-score">Mod Work Score</div>
+      <div id="mod-score-list"></div>
+      <button class="add-btn" id="add-mod-score-btn" onclick="addModScoreRow()">＋ <span id="lbl-add-mod-score">Add another mod</span></button>
+    </div>
+
+    <div class="panel" id="sat-panel">
+      <div class="pt">User Satisfaction — Today's Poll</div>
+      <div class="sat-row">
+        <div class="sat-f"><label>⭐ Avg score</label><input type="number" id="mod-sa" value="4.2" min="1" max="5" step="0.1" oninput="updSat()"></div>
+        <div class="sat-f"><label>/ 5</label></div>
+        <div class="sat-f" style="margin-left:8px"><label>🗳 Total votes</label><input type="number" id="mod-sv" value="0" min="0" oninput="updSat()"></div>
+        <div class="sat-badge" id="sat-badge">4.2 / 5 · 0 votes</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="pt" id="pt-notes">Notes</div>
+      <div class="notes-g" id="notes-grid">
+        <div class="f"><label id="nl1">Top topic today</label><input type="text" id="mod-n1" placeholder="e.g. BGW campaign reward questions"></div>
+        <div class="f"><label>Highlights</label><input type="text" id="mod-n2" placeholder="Notable events. 'None' if quiet."></div>
+        <div class="f"><label id="nl3">Suggestions collected</label><input type="text" id="mod-n3" placeholder="e.g. User suggested SOL staking guide"></div>
+        <div class="f"><label>Action items for CM</label><input type="text" id="mod-n4" placeholder="'None' if nothing."></div>
+      </div>
+    </div>
+
+    <button class="submit-btn" onclick="submitReport()">✓ Submit Report</button>
+    <div id="last-submit-info" style="text-align:center;font-size:11px;color:var(--text3);margin-top:8px"></div>
+    <div id="mod-export" style="display:none" class="exp-bar-panel">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px">Export submitted report</div>
+      <div class="exp-bar">
+        <button class="exp-btn primary" onclick="expImg()">📸 Generate Report Card (PNG)</button>
+        <button class="exp-btn" onclick="expMD()">⬇ Export as .md</button>
+        <span class="exp-hint">PNG → Lark &nbsp;·&nbsp; .md → paste to AI for one-line summary</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CM VIEW -->
+  <div id="cm-view" style="display:none">
+    <div id="today-status" class="cm-today missing">
+      <div class="cm-today-icon">⚠️</div>
+      <div><div class="cm-today-main">Today's report not yet submitted</div><div class="cm-today-sub">Waiting for mod to submit...</div></div>
+      <div class="cm-today-meta"><button class="refresh-btn" onclick="syncData()">🔄 Refresh</button></div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-panel">
+        <div class="chart-panel-title">Membership <span class="chart-panel-sub">last 30 days</span></div>
+        <div class="cleg">
+          <div class="li"><span class="lsq" style="background:#534AB7"></span>Total</div>
+          <div class="li"><span class="lsq" style="background:#1D9E75;opacity:.6"></span>New/day</div>
+          <div class="li"><span class="ld" style="border-color:#534AB7"></span>Start baseline</div>
+        </div>
+        <div style="height:180px"><canvas id="ch-mem"></canvas></div>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-panel-title">Activity <span class="chart-panel-sub">last 30 days</span></div>
+        <div class="cleg">
+          <div class="li"><span class="lsq" style="background:#378ADD"></span>Messages</div>
+          <div class="li"><span class="lsq" style="background:#D4537E"></span>Active users</div>
+          <div class="li"><span class="lsq" style="background:#EF9F27"></span>UGC</div>
+          <div class="li" id="pred-leg" style="display:none"><span class="lsq" style="background:#D4537E"></span>Core active</div>
+        </div>
+        <div style="height:180px"><canvas id="ch-act"></canvas></div>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-panel-title">Mod Score <span class="chart-panel-sub">last 30 days</span></div>
+        <div style="height:180px"><canvas id="ch-score"></canvas></div>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-panel-title">User Satisfaction <span class="chart-panel-sub">last 30 days</span></div>
+        <div class="cleg">
+          <div class="li"><span class="lsq" style="background:#1D9E75"></span>Avg score</div>
+          <div class="li"><span class="ld" style="border-color:#EF9F27"></span>Target 4.0</div>
+        </div>
+        <div style="height:180px"><canvas id="ch-sat"></canvas></div>
+      </div>
+    </div>
+
+    <div class="history-panel">
+      <div class="hist-title">
+        <span>History <span id="hist-count" style="color:var(--text3);font-weight:400"></span></span>
+        <button class="refresh-btn" onclick="syncData()">🔄 Refresh</button>
+      </div>
+      <div id="hist-wrap" style="overflow-x:auto">
+        <table class="hist-table">
+          <thead>
+            <tr>
+              <th>Date</th><th>Mod</th><th>Total</th><th>New</th>
+              <th id="h-msg-col">Messages</th><th id="h-act-col">Active</th>
+              <th>Score</th><th>Satisfaction</th><th>Complaints</th>
+            </tr>
+          </thead>
+          <tbody id="hist-body"></tbody>
+        </table>
+        <div id="hist-empty" class="no-data" style="display:none">No reports submitted yet. Mods need to submit their first daily report.</div>
+      </div>
+    </div>
+    <div class="exp-bar-panel" id="cm-export" style="display:none">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px">Export a daily report</div>
+      <div class="exp-bar">
+        <select class="exp-date-sel" id="cm-exp-date"></select>
+        <button class="exp-btn primary" onclick="expImg()">📸 PNG (Lark card)</button>
+        <button class="exp-btn" onclick="expMD()">⬇ .md (AI summary)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="rc-stage"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let mode = 'mod';
+let com = 'en';
+let allData = { en: [], cn: [], pred: [] };
+let gasUrl = '';
+const charts = {};
+
+const COM_LABELS = { en: 'EN Community', cn: '中文社区', pred: 'Prediction Group' };
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+window.onload = function() {
+  gasUrl = localStorage.getItem('bgw_gas_url') || '';
+  if (gasUrl) document.getElementById('gas-url').value = gasUrl;
+
+  ['en','cn','pred'].forEach(c => {
+    const s = localStorage.getItem('bgw_data_' + c);
+    if (s) try { allData[c] = JSON.parse(s); } catch(e) {}
+  });
+
+  document.getElementById('mod-date').value = today();
+  updateComUI();
+
+  // Restore last used mods for current community
+  const savedMods = localStorage.getItem('bgw_last_mods_' + com);
+  if (savedMods) {
+    try {
+      JSON.parse(savedMods).forEach(name => {
+        // Temporarily set input value and call addMod
+        document.getElementById('mod-name-input').value = name;
+        addMod();
+      });
+    } catch(e) {}
+  }
+
+  // Wire up the tag input keydown
+  const tagInput = document.getElementById('mod-name-input');
+  if (tagInput) tagInput.addEventListener('keydown', handleTagKey);
+
+  renderLastSubmitInfo();
+};
+
+function today() {
+  return new Date().toISOString().slice(0,10);
+}
+
+// ─────────────────────────────────────────────
+// MODE / COM SWITCHING
+// ─────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-mod').classList.toggle('active', m === 'mod');
+  document.getElementById('btn-cm').classList.toggle('active', m === 'cm');
+  document.getElementById('mod-view').style.display = m === 'mod' ? '' : 'none';
+  document.getElementById('cm-view').style.display = m === 'cm' ? '' : 'none';
+  if (m === 'cm') renderDashboard();
+}
+
+function setCom(c, btn) {
+  com = c;
+  document.querySelectorAll('.ctab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  // Clear existing mod tags and score cards
+  document.getElementById('mod-tags').innerHTML = '';
+  document.getElementById('mod-score-list').innerHTML = '';
+  updateComUI();
+  // Restore last mods for this community
+  const savedMods = localStorage.getItem('bgw_last_mods_' + com);
+  if (savedMods) {
+    try {
+      JSON.parse(savedMods).forEach(name => {
+        document.getElementById('mod-name-input').value = name;
+        addMod();
+      });
+    } catch(e) {}
+  }
+  renderLastSubmitInfo();
+  if (mode === 'cm') renderDashboard();
+}
+
+function updateComUI() {
+  const isCN = com === 'cn';
+  const isPred = com === 'pred';
+
+  // UGC: only show for Prediction group
+  document.getElementById('f-msgs').style.display = isPred ? 'none' : '';
+  document.getElementById('f-active').style.display = isPred ? 'none' : '';
+  document.getElementById('f-ugc').style.display = isPred ? '' : 'none';
+  document.getElementById('f-preds').style.display = isPred ? '' : 'none';
+  document.getElementById('f-core').style.display = isPred ? '' : 'none';
+  document.getElementById('complaints-panel').style.display = isPred ? 'none' : '';
+  document.getElementById('sat-panel').style.display = isPred ? 'none' : '';
+
+  // Rebuild score blocks for current mods list
+  rebuildScoreCards();
+
+  // Section titles & labels
+  const isCN_ = isCN; // closure alias
+  if (isCN_) {
+    document.getElementById('pt-basic').childNodes[0].textContent = '基本信息';
+    document.getElementById('lbl-date').textContent = '日期';
+    document.getElementById('lbl-mods').textContent = '今日值班 Mod（可多选）';
+    document.getElementById('mod-name-input').placeholder = '输入姓名后按回车';
+    document.getElementById('pt-nums').childNodes[0].textContent = '今日数据';
+    document.querySelector('#pt-nums ~ div .f label, #mod-tot').closest('.panel').querySelector('.rl').textContent = '总成员数（当天截止时）';
+    document.getElementById('lbl-msgs').textContent = '今日消息数';
+    document.getElementById('lbl-active').textContent = '今日活跃用户';
+    document.querySelector('.chdr').innerHTML = '<span>业务/问题类型</span><span>数量</span><span>平均速度</span><span></span>';
+    document.getElementById('pt-score').childNodes[0].textContent = 'Mod 工作打分';
+    document.getElementById('lbl-add-mod-score').textContent = '添加一位 Mod';
+    document.getElementById('pt-notes').childNodes[0].textContent = '文字备注';
+    document.getElementById('nl1').textContent = '今日主要话题';
+    document.getElementById('nl3').textContent = '收集到的建议';
+    document.getElementById('mod-n1').placeholder = '例：BGW活动奖励规则咨询';
+    document.getElementById('mod-n2').placeholder = '值得注意的事件，无则填"无"';
+    document.getElementById('mod-n3').placeholder = '例：建议增加SOL质押教程';
+    document.getElementById('mod-n4').placeholder = '无则填"无"';
+    const satPanel = document.getElementById('sat-panel');
+    if (satPanel) {
+      satPanel.querySelector('.pt').childNodes[0].textContent = '用户满意度 — 今日投票';
+      const satLabels = satPanel.querySelectorAll('.sat-f label');
+      if (satLabels[0]) satLabels[0].textContent = '⭐ 平均评分';
+      if (satLabels[1]) satLabels[1].textContent = '/ 5';
+      if (satLabels[2]) satLabels[2].textContent = '🗳 投票人数';
+    }
+    document.querySelector('.submit-btn').textContent = '✓ 提交日报';
+    document.querySelector('#mod-export > div').textContent = '导出日报';
+    document.querySelector('#mod-export .exp-btn.primary').textContent = '📸 生成日报卡片（PNG）';
+    document.querySelector('#mod-export .exp-btn:not(.primary)').textContent = '⬇ 导出 .md';
+    document.querySelector('.exp-hint').textContent = 'PNG → 直接发 Lark · .md → 粘给 AI 生成一句话总结';
+  } else {
+    document.getElementById('pt-basic').childNodes[0].textContent = 'Basic Info';
+    document.getElementById('lbl-date').textContent = 'Date';
+    document.getElementById('lbl-mods').textContent = 'Mods on duty today';
+    document.getElementById('mod-name-input').placeholder = 'Type name then ＋';
+    document.getElementById('pt-nums').childNodes[0].textContent = "Today's Numbers";
+    document.querySelector('.panel #mod-tot').closest('.panel').querySelector('.rl').textContent = 'Total members (end of day snapshot)';
+    document.getElementById('lbl-msgs').textContent = 'Messages today';
+    document.getElementById('lbl-active').textContent = 'Active users today';
+    document.querySelector('.chdr').innerHTML = '<span>Business / issue type</span><span>Count</span><span>Avg speed</span><span></span>';
+    document.getElementById('pt-score').childNodes[0].textContent = 'Mod Work Score';
+    document.getElementById('lbl-add-mod-score').textContent = 'Add another mod';
+    document.getElementById('pt-notes').childNodes[0].textContent = 'Notes';
+    document.getElementById('nl1').textContent = 'Top topic today';
+    document.getElementById('nl3').textContent = 'Suggestions collected';
+    document.getElementById('mod-n1').placeholder = 'e.g. BGW campaign reward questions';
+    document.getElementById('mod-n2').placeholder = "Notable events. 'None' if quiet.";
+    document.getElementById('mod-n3').placeholder = 'e.g. User suggested SOL staking guide';
+    document.getElementById('mod-n4').placeholder = "'None' if nothing.";
+    document.querySelector('.submit-btn').textContent = '✓ Submit Report';
+  }
+}
+
+// ─────────────────────────────────────────────
+// MOD TAGS (multi-select)
+// ─────────────────────────────────────────────
+function addMod() {
+  const input = document.getElementById('mod-name-input');
+  const name = (input.value || '').trim().replace(/,/g,'');
+  if (!name) return;
+  const existing = getMods();
+  if (existing.includes(name)) { input.value = ''; return; }
+
+  // Add tag chip
+  const tagsEl = document.getElementById('mod-tags');
+  const chip = document.createElement('span');
+  chip.className = 'mod-tag';
+  chip.dataset.name = name;
+  chip.innerHTML = `${name}<button onclick="removeMod('${name.replace(/'/g,"\\'")}')">×</button>`;
+  tagsEl.appendChild(chip);
+
+  // Add score card
+  addModScoreCard(name);
+  input.value = '';
+}
+
+function removeMod(name) {
+  // Remove tag
+  const chip = document.querySelector(`#mod-tags [data-name="${CSS.escape(name)}"]`);
+  if (chip) chip.remove();
+  // Remove score card
+  removeModScoreCard(name);
+}
+
+function handleTagKey(e) {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    addMod();
+  } else if (e.key === 'Backspace' && e.target.value === '') {
+    const tags = document.querySelectorAll('#mod-tags .mod-tag');
+    if (tags.length > 0) {
+      const last = tags[tags.length - 1];
+      removeMod(last.dataset.name);
+    }
+  }
+}
+
+function getMods() {
+  return Array.from(document.querySelectorAll('#mod-tags .mod-tag')).map(t => t.dataset.name);
+}
+
+// ─────────────────────────────────────────────
+// MULTI-MOD SCORE CARDS
+// ─────────────────────────────────────────────
+const EN_DIMS = ['Work hours completed','No violation messages missed (spot check)','Community activity promoted','Suggestions collected','No complaints about mod'];
+const CN_DIMS = ['工作时长达标','抽查无违规消息遗漏（Lead随机抽检）','促进社区活跃','收集到产品/活动建议','工作期间未被投诉'];
+
+function getDims() { return com === 'cn' ? CN_DIMS : EN_DIMS; }
+function getPlaceholder() { return com === 'cn' ? '备注' : 'note'; }
+
+function addModScoreCard(name) {
+  const container = document.getElementById('mod-score-list');
+  const safeId = 'msc-' + name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g,'_');
+  if (document.getElementById(safeId)) return;
+  const dims = getDims();
+  const ph = getPlaceholder();
+  const card = document.createElement('div');
+  card.className = 'mscard';
+  card.id = safeId;
+  card.innerHTML = `
+    <div class="mscard-hd">
+      <span class="mscard-name">${name}</span>
+      <span class="mscard-total" id="${safeId}-tot">10 / 10</span>
+      <button class="mscard-rm" onclick="removeMod('${name.replace(/'/g,"\\'")}')">×</button>
+    </div>
+    <div class="mscard-bar"><div class="mscard-bar-fill" id="${safeId}-bar" style="width:100%;height:5px;background:var(--brand);border-radius:3px;transition:width .3s"></div></div>
+    <div class="msdims">
+      ${dims.map((d,i) => `
+        <div class="msdim-row">
+          <span class="msdim-lbl">${d}</span>
+          <select class="msdim-sel" id="${safeId}-d${i}" onchange="recalcCard('${safeId}')">
+            <option>0</option><option>1</option><option selected>2</option>
+          </select>
+        </div>
+      `).join('')}
+    </div>`;
+  container.appendChild(card);
+}
+
+function removeModScoreCard(name) {
+  const safeId = 'msc-' + name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g,'_');
+  const el = document.getElementById(safeId);
+  if (el) el.remove();
+}
+
+function rebuildScoreCards() {
+  // Keep existing mods, rebuild their dim labels (for language switch)
+  const container = document.getElementById('mod-score-list');
+  if (!container) return;
+  const dims = getDims();
+  const ph = getPlaceholder();
+  container.querySelectorAll('.mscard').forEach(card => {
+    const dimRows = card.querySelectorAll('.msdim-lbl');
+    dimRows.forEach((lbl, i) => { if (dims[i]) lbl.textContent = dims[i]; });
+  });
+}
+
+function recalcCard(safeId) {
+  let total = 0;
+  for (let i = 0; i < 5; i++) {
+    const el = document.getElementById(safeId + '-d' + i);
+    if (el) total += parseInt(el.value) || 0;
+  }
+  const totEl = document.getElementById(safeId + '-tot');
+  const barEl = document.getElementById(safeId + '-bar');
+  if (totEl) totEl.textContent = total + ' / 10';
+  if (barEl) barEl.style.width = (total * 10) + '%';
+  if (totEl) totEl.style.color = total === 10 ? 'var(--green)' : total >= 7 ? 'var(--yellow)' : 'var(--red)';
+}
+
+function addModScoreRow() {
+  // Prompt for name if no mod in score list yet
+  const input = document.getElementById('mod-name-input');
+  input.focus();
+}
+
+function getModScores() {
+  const container = document.getElementById('mod-score-list');
+  if (!container) return [];
+  return Array.from(container.querySelectorAll('.mscard')).map(card => {
+    const safeId = card.id;
+    const name = card.querySelector('.mscard-name').textContent;
+    let total = 0;
+    for (let i = 0; i < 5; i++) {
+      const el = document.getElementById(safeId + '-d' + i);
+      if (el) total += parseInt(el.value) || 0;
+    }
+    return { mod: name, score: total };
+  });
+}
+
+function calcScore() {
+  // Returns avg score across all mods (for backward compat)
+  const scores = getModScores();
+  if (scores.length === 0) return 10;
+  return Math.round(scores.reduce((s,m) => s + m.score, 0) / scores.length);
+}
+
+// ─────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────
+function toggleCfg() {
+  document.getElementById('cfg-bar').classList.toggle('open');
+}
+
+function saveConfig() {
+  gasUrl = document.getElementById('gas-url').value.trim();
+  localStorage.setItem('bgw_gas_url', gasUrl);
+  showToast('Config saved', 'success');
+  document.getElementById('cfg-status').textContent = gasUrl ? '✓ URL saved' : '';
+}
+
+// ─────────────────────────────────────────────
+// DATA MANAGEMENT
+// ─────────────────────────────────────────────
+function saveLocal(c) {
+  localStorage.setItem('bgw_data_' + c, JSON.stringify(allData[c]));
+}
+
+function mergeInto(c, remoteArr) {
+  const map = {};
+  allData[c].forEach(r => { map[r.date] = r; });
+  remoteArr.forEach(r => { map[r.date] = r; }); // remote wins on conflict
+  allData[c] = Object.values(map).sort((a,b) => a.date.localeCompare(b.date));
+  saveLocal(c);
+}
+
+async function fetchCom(c) {
+  if (!gasUrl) return;
+  try {
+    const res = await fetch(gasUrl + '?c=' + c + '&t=' + Date.now());
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      mergeInto(c, data);
+    }
+  } catch(e) {
+    console.warn('Fetch failed for', c, e);
+  }
+}
+
+async function syncData() {
+  if (!gasUrl) {
+    showToast('No backend URL set — open ⚙ Config', 'error');
+    return;
+  }
+  showToast('Syncing...');
+  await Promise.all(['en','cn','pred'].map(fetchCom));
+  showToast('Data synced ✓', 'success');
+  if (mode === 'cm') renderDashboard();
+  renderLastSubmitInfo();
+}
+
+async function pushToGAS(report) {
+  if (!gasUrl) return;
+  try {
+    const encoded = encodeURIComponent(JSON.stringify(report));
+    const url = gasUrl + '?action=save&c=' + com + '&d=' + encoded;
+    const res = await fetch(url);
+    const result = await res.json();
+    if (!result.ok) throw new Error(result.error);
+  } catch(e) {
+    console.warn('GAS push failed:', e);
+    throw e;
+  }
+}
+
+// ─────────────────────────────────────────────
+// COMPLAINTS
+// ─────────────────────────────────────────────
+function addC() {
+  const id = 'c' + Date.now();
+  const isCN = com === 'cn';
+  const sp = isCN ? ['<5分钟','5–15分钟','15–30分钟','>30分钟'] : ['<5 min','5–15 min','15–30 min','>30 min'];
+  const d = document.createElement('div');
+  d.className = 'crow'; d.id = id;
+  d.innerHTML = `<input type="text" placeholder="${isCN?'业务类型':'e.g. Withdrawal'}">
+    <input type="number" value="1" min="1">
+    <select>${sp.map(s=>`<option>${s}</option>`).join('')}</select>
+    <button class="rm-btn" onclick="document.getElementById('${id}').remove()">×</button>`;
+  document.getElementById('mod-complaints').appendChild(d);
+}
+
+function getComplaints() {
+  return Array.from(document.getElementById('mod-complaints').querySelectorAll('.crow')).map(r => {
+    const inp = r.querySelectorAll('input,select');
+    return { type: inp[0].value || '—', count: parseInt(inp[1].value) || 1, speed: inp[2].value };
+  });
+}
+
+function updSat() {
+  const a = parseFloat(document.getElementById('mod-sa').value) || 0;
+  const v = parseInt(document.getElementById('mod-sv').value) || 0;
+  const isCN = com === 'cn';
+  document.getElementById('sat-badge').textContent = a.toFixed(1) + ' / 5  ·  ' + v + (isCN ? ' 票' : ' votes');
+}
+
+// ─────────────────────────────────────────────
+// SUBMIT
+// ─────────────────────────────────────────────
+async function submitReport() {
+  const date = document.getElementById('mod-date').value;
+  const mods = getMods();
+  const total = parseInt(document.getElementById('mod-tot').value) || 0;
+  const newMem = parseInt(document.getElementById('mod-new').value) || 0;
+
+  const isCN = com === 'cn';
+  if (!date) { showToast(isCN ? '请填写日期' : 'Please set a date', 'error'); return; }
+  if (mods.length === 0) { showToast(isCN ? '请至少添加一位 Mod' : 'Please add at least one mod', 'error'); return; }
+  if (!total) { showToast(isCN ? '请填写总成员数' : 'Please enter total members', 'error'); return; }
+
+  const isPred = com === 'pred';
+  const modScores = getModScores();
+  const avgScore = modScores.length > 0
+    ? Math.round(modScores.reduce((s,m) => s + m.score, 0) / modScores.length)
+    : 10;
+
+  const report = {
+    date,
+    community: com,
+    mod: mods.join(', '),
+    mods,
+    mod_scores: modScores,
+    mod_score: avgScore,
+    members_total: total,
+    members_new: newMem,
+    sat_avg: isPred ? 0 : (parseFloat(document.getElementById('mod-sa').value) || 0),
+    sat_votes: isPred ? 0 : (parseInt(document.getElementById('mod-sv').value) || 0),
+    complaints: isPred ? [] : getComplaints(),
+    notes: {
+      topic: document.getElementById('mod-n1').value.trim(),
+      highlights: document.getElementById('mod-n2').value.trim(),
+      suggestions: document.getElementById('mod-n3').value.trim(),
+      actions: document.getElementById('mod-n4').value.trim()
+    },
+    submitted_at: new Date().toISOString()
+  };
+
+  if (isPred) {
+    report.predictions = parseInt(document.getElementById('mod-preds').value) || 0;
+    report.core_active = parseInt(document.getElementById('mod-core').value) || 0;
+  } else {
+    report.messages = parseInt(document.getElementById('mod-msgs').value) || 0;
+    report.active = parseInt(document.getElementById('mod-active').value) || 0;
+  }
+
+  // Save locally
+  const existing = allData[com].findIndex(r => r.date === date);
+  if (existing >= 0) allData[com][existing] = report;
+  else allData[com].push(report);
+  allData[com].sort((a,b) => a.date.localeCompare(b.date));
+  saveLocal(com);
+
+  // Remember last mod names
+  localStorage.setItem('bgw_last_mods_' + com, JSON.stringify(mods));
+
+  // Push to GAS
+  const btn = document.querySelector('.submit-btn');
+  btn.disabled = true;
+  btn.textContent = isCN ? '提交中...' : 'Submitting...';
+
+  try {
+    if (gasUrl) await pushToGAS(report);
+    showToast(isCN ? '日报已提交 ✓' : 'Report submitted ✓', 'success');
+  } catch(e) {
+    showToast(isCN ? '已本地保存（GAS同步失败）' : 'Saved locally (GAS sync failed)', 'error');
+  }
+
+  btn.disabled = false;
+  btn.textContent = isCN ? '✓ 提交日报' : '✓ Submit Report';
+  renderLastSubmitInfo();
+  const expEl = document.getElementById('mod-export');
+  if (expEl) expEl.style.display = '';
+  window._lastExportDate = date;
+}
+
+function renderLastSubmitInfo() {
+  const el = document.getElementById('last-submit-info');
+  if (!el) return;
+  const records = allData[com];
+  if (records.length === 0) { el.textContent = ''; return; }
+  const last = records[records.length - 1];
+  el.textContent = `Last submitted: ${last.date} by ${last.mod || '—'}`;
+}
+
+// ─────────────────────────────────────────────
+// CM DASHBOARD
+// ─────────────────────────────────────────────
+function renderDashboard() {
+  const records = allData[com];
+  renderTodayStatus(records);
+  renderCharts(records);
+  renderHistory(records);
+  renderCMExport(records);
+}
+
+function renderTodayStatus(records) {
+  const el = document.getElementById('today-status');
+  const todayStr = today();
+  const todayRec = records.find(r => r.date === todayStr);
+
+  if (todayRec) {
+    el.className = 'cm-today submitted';
+    el.innerHTML = `
+      <div class="cm-today-icon">✅</div>
+      <div>
+        <div class="cm-today-main">Today's report submitted — ${COM_LABELS[com]}</div>
+        <div class="cm-today-sub">Members: ${todayRec.members_total.toLocaleString()} &nbsp;·&nbsp; New: +${todayRec.members_new} &nbsp;·&nbsp; Score: ${todayRec.mod_score}/10 &nbsp;·&nbsp; Sat: ${todayRec.sat_avg ? todayRec.sat_avg.toFixed(1)+'/5' : 'N/A'}</div>
+      </div>
+      <div class="cm-today-meta">
+        <div>by ${todayRec.mod || '—'}</div>
+        <button class="refresh-btn" style="margin-top:4px" onclick="syncData()">🔄 Sync</button>
+      </div>`;
+  } else {
+    const lastRec = records.length > 0 ? records[records.length - 1] : null;
+    el.className = 'cm-today missing';
+    el.innerHTML = `
+      <div class="cm-today-icon">⚠️</div>
+      <div>
+        <div class="cm-today-main">Today's report not yet submitted</div>
+        <div class="cm-today-sub">${lastRec ? `Last submitted: ${lastRec.date} by ${lastRec.mod||'—'}` : 'No reports submitted yet'}</div>
+      </div>
+      <div class="cm-today-meta"><button class="refresh-btn" onclick="syncData()">🔄 Refresh</button></div>`;
+  }
+}
+
+function renderCharts(records) {
+  const last30 = records.slice(-30);
+  if (last30.length === 0) {
+    ['ch-mem','ch-act','ch-score','ch-sat'].forEach(id => {
+      const canvas = document.getElementById(id);
+      if (canvas) { const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height); }
+      if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+    });
+    return;
+  }
+
+  const labels = last30.map(r => r.date.slice(5)); // MM-DD
+  const isPred = com === 'pred';
+
+  // Membership chart (line: total, bar: new)
+  mkChart('ch-mem', {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Total members',
+          data: last30.map(r => r.members_total || 0),
+          type: 'line',
+          borderColor: '#534AB7',
+          backgroundColor: 'rgba(83,74,183,0.07)',
+          fill: true,
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 2,
+          yAxisID: 'y'
+        },
+        {
+          label: 'New today',
+          data: last30.map(r => r.members_new || 0),
+          backgroundColor: 'rgba(29,158,117,0.55)',
+          borderRadius: 3,
+          yAxisID: 'y2'
+        }
+      ]
+    },
+    options: multiAxisOpts('Members', 'New')
+  });
+
+  // Activity chart
+  if (!isPred) {
+    mkChart('ch-act', {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Messages', data: last30.map(r => r.messages||0), borderColor:'#378ADD', tension:0.3, borderWidth:2, pointRadius:2, fill:false },
+          { label: 'Active users', data: last30.map(r => r.active||0), borderColor:'#D4537E', tension:0.3, borderWidth:2, pointRadius:2, borderDash:[4,3], fill:false },
+          { label: 'UGC', data: last30.map(r => r.ugc||0), borderColor:'#EF9F27', tension:0.3, borderWidth:2, pointRadius:2, borderDash:[7,3], fill:false }
+        ]
+      },
+      options: baseOpts()
+    });
+  } else {
+    mkChart('ch-act', {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Core active', data: last30.map(r => r.core_active||0), borderColor:'#D4537E', tension:0.3, borderWidth:2, pointRadius:2, fill:false },
+          { label: 'Predictions', data: last30.map(r => r.predictions||0), borderColor:'#EF9F27', tension:0.3, borderWidth:2, pointRadius:2, borderDash:[4,3], fill:false }
+        ]
+      },
+      options: baseOpts()
+    });
+  }
+
+  // Mod score chart (bar, color coded)
+  const scores = last30.map(r => r.mod_score || 0);
+  mkChart('ch-score', {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Score',
+        data: scores,
+        backgroundColor: scores.map(s => s === 10 ? '#1a8a5f' : s >= 7 ? '#EF9F27' : '#c0392b'),
+        borderRadius: 3
+      }]
+    },
+    options: {
+      ...baseOpts(),
+      scales: {
+        x: { ticks:{font:{size:10},color:'#9896a8'}, grid:{display:false} },
+        y: { min:0, max:10, ticks:{font:{size:10},color:'#9896a8',stepSize:2}, grid:{color:'rgba(83,74,183,0.06)'} }
+      }
+    }
+  });
+
+  // Satisfaction chart
+  mkChart('ch-sat', {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Avg score',
+          data: last30.map(r => r.sat_avg || null),
+          borderColor: '#1D9E75',
+          backgroundColor: 'rgba(29,158,117,0.07)',
+          fill: true,
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 3,
+          spanGaps: true
+        },
+        {
+          label: 'Target 4.0',
+          data: last30.map(() => 4.0),
+          borderColor: '#EF9F27',
+          borderDash: [6,4],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false
+        }
+      ]
+    },
+    options: {
+      ...baseOpts(),
+      scales: {
+        x: { ticks:{font:{size:10},color:'#9896a8'}, grid:{display:false} },
+        y: { min:1, max:5, ticks:{font:{size:10},color:'#9896a8',stepSize:1}, grid:{color:'rgba(83,74,183,0.06)'} }
+      }
+    }
+  });
+}
+
+function renderHistory(records) {
+  const recent = [...records].reverse().slice(0, 60); // newest first
+  const body = document.getElementById('hist-body');
+  const empty = document.getElementById('hist-empty');
+  const count = document.getElementById('hist-count');
+  const isPred = com === 'pred';
+
+  count.textContent = `(${records.length} reports)`;
+
+  if (recent.length === 0) {
+    body.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  body.innerHTML = recent.map(r => {
+    const scoreCls = r.mod_score === 10 ? 'score-10' : r.mod_score >= 7 ? 'score-hi' : 'score-lo';
+    const complaints = (r.complaints||[]).length > 0
+      ? `${(r.complaints||[]).reduce((s,c)=>s+(c.count||1),0)} cases`
+      : '—';
+    const msgVal = isPred ? (r.predictions||0) : (r.messages||0);
+    const actVal = isPred ? (r.core_active||0) : (r.active||0);
+    const satVal = r.sat_avg ? r.sat_avg.toFixed(1) + ' (' + (r.sat_votes||0) + 'v)' : '—';
+    return `<tr>
+      <td style="font-family:'DM Mono',monospace;white-space:nowrap">${r.date}</td>
+      <td>${r.mod||'—'}</td>
+      <td style="font-family:'DM Mono',monospace">${(r.members_total||0).toLocaleString()}</td>
+      <td style="font-family:'DM Mono',monospace;color:var(--green)">+${r.members_new||0}</td>
+      <td style="font-family:'DM Mono',monospace">${msgVal}</td>
+      <td style="font-family:'DM Mono',monospace">${actVal}</td>
+      <td><span class="score-pill ${scoreCls}">${r.mod_score||0}/10</span></td>
+      <td>${satVal}</td>
+      <td>${isPred ? '—' : complaints}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+// CHART HELPERS
+// ─────────────────────────────────────────────
+function mkChart(id, cfg) {
+  const el = document.getElementById(id); if (!el) return;
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  charts[id] = new Chart(el, cfg);
+}
+
+function baseOpts() {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+    scales: {
+      x: { ticks:{font:{size:10},color:'#9896a8',maxRotation:45,minRotation:0}, grid:{display:false} },
+      y: { ticks:{font:{size:10},color:'#9896a8'}, grid:{color:'rgba(83,74,183,0.06)'} }
+    },
+    animation: { duration: 250 }
+  };
+}
+
+function multiAxisOpts(label1, label2) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+    scales: {
+      x: { ticks:{font:{size:10},color:'#9896a8',maxRotation:45,minRotation:0}, grid:{display:false} },
+      y: { position:'left', ticks:{font:{size:10},color:'#9896a8'}, grid:{color:'rgba(83,74,183,0.06)'}, title:{display:true,text:label1,font:{size:10},color:'#9896a8'} },
+      y2: { position:'right', ticks:{font:{size:10},color:'#1D9E75'}, grid:{display:false}, title:{display:true,text:label2,font:{size:10},color:'#1D9E75'} }
+    },
+    animation: { duration: 250 }
+  };
+}
+
+// ─────────────────────────────────────────────
+// CM EXPORT PANEL
+// ─────────────────────────────────────────────
+function renderCMExport(records) {
+  const el = document.getElementById('cm-export');
+  const sel = document.getElementById('cm-exp-date');
+  if (!el || !sel) return;
+  if (records.length === 0) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  // Populate date selector (newest first)
+  const sorted = [...records].reverse();
+  sel.innerHTML = sorted.map(r =>
+    `<option value="${r.date}">${r.date} · ${r.mod||'—'} · ${r.members_total.toLocaleString()} members</option>`
+  ).join('');
+}
+
+// ─────────────────────────────────────────────
+// BUILD REPORT CARD HTML (shared by both modes)
+// ─────────────────────────────────────────────
+function getExportReport() {
+  if (mode === 'cm') {
+    const sel = document.getElementById('cm-exp-date');
+    if (!sel || !sel.value) return null;
+    return allData[com].find(r => r.date === sel.value) || null;
+  } else {
+    // mod mode: use last submitted date
+    const date = window._lastExportDate || document.getElementById('mod-date').value;
+    return allData[com].find(r => r.date === date) || null;
+  }
+}
+
+function buildRC(report) {
+  if (!report) return '';
+  const isPred = report.community === 'pred';
+  const isCN = report.community === 'cn';
+  const lbl = COM_LABELS[report.community] || report.community;
+  const net = report.members_new || 0;
+  const modList = (report.mods || [report.mod]).filter(Boolean).join('、');
+
+  // Per-mod scores section
+  const modScores = report.mod_scores || [];
+  let scoreHTML = '';
+  if (modScores.length > 0) {
+    scoreHTML = `<div class="rc-sec"><div class="rc-sec-title">${isCN ? 'Mod 工作打分' : 'Mod Work Scores'}</div>`;
+    modScores.forEach(ms => {
+      const pct = (ms.score / 10 * 100).toFixed(0);
+      const col = ms.score === 10 ? '#1a8a5f' : ms.score >= 7 ? '#b05b0a' : '#c0392b';
+      scoreHTML += `<div class="rc-row"><span>${ms.mod}</span><span class="rc-rv" style="color:${col}">${ms.score} / 10</span></div>
+        <div class="rc-bar-bg"><div class="rc-bar-fill" style="width:${pct}%;background:${col}"></div></div>`;
+    });
+    if (modScores.length > 1) {
+      const avg = Math.round(modScores.reduce((s,m) => s+m.score, 0) / modScores.length);
+      scoreHTML += `<div class="rc-row" style="margin-top:5px;font-weight:600"><span>${isCN?'平均分':'Average'}</span><span class="rc-rv">${avg} / 10</span></div>`;
+    }
+    scoreHTML += `</div>`;
+  } else if (report.mod_score !== undefined) {
+    const sc = report.mod_score || 0;
+    scoreHTML = `<div class="rc-sec"><div class="rc-sec-title">${isCN ? 'Mod 工作打分' : 'Mod Work Score'}</div>
+      <div class="rc-row"><span>${isCN?'得分':'Score'}</span><span class="rc-rv">${sc} / 10</span></div>
+      <div class="rc-bar-bg"><div class="rc-bar-fill" style="width:${sc*10}%"></div></div></div>`;
+  }
+
+  let h = `<div class="rc">
+    <div class="rc-hd">
+      <div>
+        <div class="rc-brand">BGW COMMUNITY · WATERKOOFAI WORKSHOP</div>
+        <div class="rc-title">${lbl} — ${isCN ? '日报' : 'Daily Report'}</div>
+        <div class="rc-meta">${isCN ? 'Mod：' : 'Mod: '}${modList}</div>
+      </div>
+      <div class="rc-date-big">${report.date.replace(/-/g,'/')}</div>
+    </div>
+    <div class="rc-body">
+      <div class="rc-kpi-row">
+        <div class="rc-kpi"><div class="rc-kpi-l">${isCN?'总成员数':'Total Members'}</div><div class="rc-kpi-v">${(report.members_total||0).toLocaleString()}</div></div>
+        <div class="rc-kpi"><div class="rc-kpi-l">${isCN?'今日新增':'New Today'}</div><div class="rc-kpi-v" style="color:${net>0?'#1a8a5f':'#9896a8'}">+${net}</div></div>
+        <div class="rc-kpi"><div class="rc-kpi-l">${isCN?'Mod 平均分':'Avg Mod Score'}</div><div class="rc-kpi-v">${report.mod_score||0}/10</div></div>
+      </div>`;
+
+  if (!isPred) {
+    h += `<div class="rc-kpi-row">
+        <div class="rc-kpi"><div class="rc-kpi-l">${isCN?'今日消息数':'Messages'}</div><div class="rc-kpi-v">${report.messages||0}</div></div>
+        <div class="rc-kpi"><div class="rc-kpi-l">${isCN?'活跃用户':'Active Users'}</div><div class="rc-kpi-v">${report.active||0}</div></div>
+        <div class="rc-kpi"><div class="rc-kpi-l">${isCN?'用户满意度':'Satisfaction'}</div><div class="rc-kpi-v" style="color:#1a8a5f">${report.sat_avg ? report.sat_avg.toFixed(1)+'/5' : '—'}</div></div>
+      </div>`;
+
+    h += scoreHTML;
+
+    if (report.sat_avg) {
+      h += `<div class="rc-sec"><div class="rc-sec-title">${isCN?'用户满意度':'User Satisfaction'}</div>
+          <div class="rc-row"><span>${isCN?'平均评分':'Avg score'}</span><span class="rc-rv" style="color:#1a8a5f">${report.sat_avg.toFixed(1)} / 5</span></div>
+          <div class="rc-row"><span>${isCN?'投票人数':'Votes'}</span><span>${report.sat_votes||0}</span></div>
+        </div>`;
+    }
+
+    const cl = report.complaints || [];
+    if (cl.length > 0) {
+      const totalCases = cl.reduce((s,c) => s+(c.count||1), 0);
+      h += `<div class="rc-sec"><div class="rc-sec-title">${isCN?'客诉记录':'Customer Complaints'} (${totalCases} ${isCN?'件':'total'})</div>`;
+      cl.forEach(c => { h += `<div class="rc-row"><span>${c.type}</span><span class="rc-rv">${c.count} ${isCN?'件':'case(s)'} · ${c.speed}</span></div>`; });
+      h += `</div>`;
+    } else {
+      h += `<div class="rc-sec"><div class="rc-sec-title">${isCN?'客诉记录':'Customer Complaints'}</div><div class="rc-row"><span style="color:#9896a8">${isCN?'今日无客诉':'No complaints today'}</span></div></div>`;
+    }
+  } else {
+    h += `<div class="rc-kpi-row">
+        <div class="rc-kpi"><div class="rc-kpi-l">Predictions Shared</div><div class="rc-kpi-v">${report.predictions||0}</div></div>
+        <div class="rc-kpi"><div class="rc-kpi-l">Core Active</div><div class="rc-kpi-v">${report.core_active||0}</div></div>
+        <div class="rc-kpi"><div class="rc-kpi-l">Mod Score</div><div class="rc-kpi-v">${report.mod_score||0}/10</div></div>
+      </div>`;
+    h += scoreHTML;
+  }
+
+  const n = report.notes || {};
+  const hasNotes = n.topic || n.highlights || n.suggestions || n.actions;
+  if (hasNotes) {
+    h += `<div class="rc-sec"><div class="rc-sec-title">${isCN ? '备注' : 'Notes'}</div>`;
+    if (n.topic)       h += `<div class="rc-row"><span>${isCN?'主要话题':'Topic'}</span><span>${n.topic}</span></div>`;
+    if (n.highlights)  h += `<div class="rc-row"><span>${isCN?'亮点':'Highlights'}</span><span>${n.highlights}</span></div>`;
+    if (n.suggestions) h += `<div class="rc-row"><span>${isCN?'建议':'Suggestions'}</span><span>${n.suggestions}</span></div>`;
+    if (n.actions)     h += `<div class="rc-row"><span>${isCN?'跟进事项':'Actions'}</span><span>${n.actions}</span></div>`;
+    h += `</div>`;
+  }
+
+  h += `</div>
+    <div class="rc-ft">
+      <span>WaterkoofAI Workshop · BGW Community Report</span>
+      <span>Generated ${new Date().toLocaleString()}</span>
+    </div>
+  </div>`;
+  return h;
+}
+
+// ─────────────────────────────────────────────
+// EXPORT PNG
+// ─────────────────────────────────────────────
+function expImg() {
+  const report = getExportReport();
+  if (!report) { showToast('No report to export', 'error'); return; }
+  const stage = document.getElementById('rc-stage');
+  stage.innerHTML = buildRC(report);
+  const card = stage.querySelector('.rc');
+  showToast('Generating image...');
+  setTimeout(() => {
+    html2canvas(card, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false })
+      .then(canvas => {
+        const a = document.createElement('a');
+        a.download = `bgw-${report.community}-${report.date}.png`;
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+        stage.innerHTML = '';
+        showToast('PNG downloaded ✓', 'success');
+      })
+      .catch(() => showToast('Image generation failed', 'error'));
+  }, 300);
+}
+
+// ─────────────────────────────────────────────
+// EXPORT MARKDOWN
+// ─────────────────────────────────────────────
+function expMD() {
+  const report = getExportReport();
+  if (!report) { showToast('No report to export', 'error'); return; }
+
+  const isPred = report.community === 'pred';
+  const isCN = report.community === 'cn';
+  const lbl = COM_LABELS[report.community] || report.community;
+  const modList = (report.mods || [report.mod]).filter(Boolean).join(isCN ? '、' : ', ');
+
+  let md = `# BGW ${lbl} ${isCN ? '日报' : 'Daily Report'} — ${report.date}\n`;
+  md += `**${isCN?'值班 Mod':'Mod(s)'}:** ${modList}\n\n`;
+  md += `## ${isCN?'成员数据':'Membership'}\n`;
+  md += `- ${isCN?'总成员数':'Total members'}: ${(report.members_total||0).toLocaleString()}\n`;
+  md += `- ${isCN?'今日新增':'New today'}: +${report.members_new||0}\n\n`;
+
+  if (!isPred) {
+    md += `## ${isCN?'活跃数据':'Activity'}\n`;
+    md += `- ${isCN?'消息数':'Messages'}: ${report.messages||0}\n`;
+    md += `- ${isCN?'活跃用户':'Active users'}: ${report.active||0}\n\n`;
+
+    const cl = report.complaints || [];
+    md += `## ${isCN?'客诉记录':'Customer Complaints'}\n`;
+    if (cl.length === 0) {
+      md += `- ${isCN?'今日无客诉':'None today'}\n\n`;
+    } else {
+      cl.forEach(c => { md += `- ${c.type}: ${c.count} ${isCN?'件':'case(s)'} · ${c.speed}\n`; });
+      md += `- ${isCN?'合计':'Total'}: ${cl.reduce((s,c)=>s+(c.count||1),0)} ${isCN?'件':''}\n\n`;
+    }
+
+    md += `## ${isCN?'Mod 工作打分':'Mod Work Scores'}\n`;
+    const modScores = report.mod_scores || [];
+    if (modScores.length > 0) {
+      modScores.forEach(ms => { md += `- ${ms.mod}: ${ms.score} / 10\n`; });
+      if (modScores.length > 1) {
+        const avg = Math.round(modScores.reduce((s,m)=>s+m.score,0)/modScores.length);
+        md += `- ${isCN?'平均分':'Average'}: ${avg} / 10\n`;
+      }
+    } else {
+      md += `- ${report.mod_score||0} / 10\n`;
+    }
+    if (report.sat_avg) {
+      md += `- ${isCN?'用户满意度':'User satisfaction'}: ${report.sat_avg.toFixed(1)} / 5 (${report.sat_votes||0} ${isCN?'票':'votes'})\n`;
+    }
+    md += '\n';
+  } else {
+    md += `## Prediction Activity\n`;
+    md += `- Predictions shared: ${report.predictions||0}\n`;
+    md += `- Core active users: ${report.core_active||0}\n`;
+    const modScores = report.mod_scores || [];
+    if (modScores.length > 0) {
+      md += `\n## Mod Work Scores\n`;
+      modScores.forEach(ms => { md += `- ${ms.mod}: ${ms.score} / 10\n`; });
+    }
+    md += '\n';
+  }
+
+  const n = report.notes || {};
+  md += `## ${isCN?'备注':'Notes'}\n`;
+  md += `- ${isCN?'主要话题':'Topic'}: ${n.topic||'—'}\n`;
+  md += `- ${isCN?'亮点':'Highlights'}: ${n.highlights||'—'}\n`;
+  md += `- ${isCN?'建议':'Suggestions'}: ${n.suggestions||'—'}\n`;
+  md += `- ${isCN?'跟进事项':'Actions'}: ${n.actions||'—'}\n`;
+  md += `\n---\n*BGW Community Report Tool · ${new Date().toLocaleString()}*`;
+
+  const b = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  a.download = `bgw-${report.community}-${report.date}.md`;
+  a.href = URL.createObjectURL(b);
+  a.click();
+  showToast(isCN ? '.md 已下载 ✓' : '.md downloaded ✓', 'success');
+}
+
+// ─────────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.classList.remove('show'); }, 2800);
+}
+
+// ─────────────────────────────────────────────
+// INITIAL SCORE TABLE
+// ─────────────────────────────────────────────
+updateComUI();
+</script>
+</body>
+</html>
