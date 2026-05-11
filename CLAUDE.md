@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A single-file, static GitHub Pages site: **`bgw_report_v2.html`**. No build system, no server, no dependencies beyond CDN-hosted Chart.js + html2canvas. Open the HTML in a browser and it works; deploy by pushing to GitHub and serving via Pages.
 
-This repo is one of three "BGW community" repos under `/Volumes/Cathy/bgw-projects/`. It is the **reader/dashboard** side of the Shared Data Pipeline. It does not run on Railway and has no backend code of its own.
+This repo is one of three "BGW community" repos under `/Volumes/Cathy/bgw-projects/`. It is the **reader/dashboard** side of the Shared Data Pipeline. The frontend doesn't run on Railway, but the repo also hosts the canonical source of the GAS Apps Script backend under `gas/` — see the "GAS Apps Script source" section below.
 
 ## What `bgw_report_v2.html` does
 
@@ -49,6 +49,33 @@ The GAS Web App is the same one bgw-v4 writes bot snapshots to — see `bgw-v4/C
 ### Local cache
 Each community's data is mirrored into `localStorage['bgw_data_{c}']` after every fetch/save, so the dashboard works offline (read-only) once the user has synced at least once. `mergeInto(c, remoteArr)` dedupes by `date` and keeps the remote version.
 
+## GAS Apps Script source
+
+The Google Apps Script Web App that backs writes from `bgw_report_v2.html` (JSONP GET `?action=save`) and from bgw-v4 / moew-airdrop-bot (JSON POST) lives in `gas/`. Apps Script does NOT auto-sync with git — this directory is the **canonical source**, but the running Web App is whatever was last pasted into the Apps Script editor.
+
+- `gas/Code.gs` — backend logic: `doGet` (JSONP for HTML tool), `doPost` (Bot teams), `writeRow`, `readAll`, `setupSheets`, `testBotPost`.
+- `gas/appsscript.json` — manifest. `timeZone: Asia/Shanghai`, V8 runtime, Web App `executeAs: USER_DEPLOYING` + `access: ANYONE_ANONYMOUS`.
+
+### Required Script Property (one-time setup)
+
+`ADMIN_TOKEN` is NOT in the source — it's fetched via `getAdminToken()` from Script Properties. To deploy:
+
+1. Apps Script editor → ⚙️ Project Settings → Script Properties → Add property
+2. Name: `ADMIN_TOKEN`, Value: the prod token (see `bgw-v4/CLAUDE.md` "Production State")
+
+Without this, `doPost` returns `{ok:false, error:"Unauthorized"}` for every Bot push.
+
+### Workflow for editing
+
+Apps Script can't pull from git, so the loop is manual:
+1. Edit `gas/Code.gs` here, commit, push.
+2. Open the Apps Script editor for the deployed Web App project.
+3. Copy the new `Code.gs` content, paste over the existing file in the editor.
+4. (Optional) Run `testBotPost()` in the editor to verify.
+5. **Deploy → Manage Deployments → Edit current deployment → New version** (otherwise the public Web App URL still serves the old code).
+
+Steps 2–5 are required for changes to take effect.
+
 ## Sister Services
 
 - **bgw-v4** (sibling repo, private) — owns the Shared Data Pipeline. Writes daily `bgw_bot_prediction` snapshots via `job_daily_snapshot` (UTC 00:30). The GAS Web App / Sheet topology and all sheet tabs are documented in `bgw-v4/CLAUDE.md` under "Shared Data Pipeline".
@@ -58,7 +85,7 @@ Each community's data is mirrored into `localStorage['bgw_data_{c}']` after ever
 ## Gotchas
 
 - **The GAS Web App URL is NOT hardcoded here.** Mods paste it into the Config bar; it's stored in `localStorage` per-browser. If you wipe localStorage you also wipe the moderator's GAS URL — they'll need to re-paste it. The default URL is in `bgw-v4/CLAUDE.md` "Shared Data Pipeline" if they lose it.
-- **No auth.** Anyone with the page can read the dashboard, and anyone who knows the GAS Web App URL can submit reports. Don't ship anything sensitive into the Sheet.
+- **Asymmetric auth on GAS.** The `doPost` path (Bot teams) requires `body.token === ADMIN_TOKEN`. The `doGet ?action=save` path (HTML tool JSONP) does NOT — anyone who knows the GAS URL can write via that path. Don't ship anything sensitive into the Sheet, and treat the GAS URL itself as a moderate secret.
 - **`SHEET_ID` and `SHEET_TABS` are duplicated** between this repo and `bgw-v4`/`lark-reporter`. If the sheet is ever renamed or replaced, all three need to change.
 - **CSV parsing is fragile**: `parseSheetCSV` assumes exactly 3 columns with the JSON payload in column 2, doubled-`""` quote escaping. Adding columns to the Sheet (or changing column order) silently breaks reads.
 - **GitHub Pages caches aggressively.** A pushed change to the HTML can take a few minutes to propagate; the cache-buster in the gviz URL (`&t={Date.now()}`) only busts the Sheets fetch, not Pages itself.
