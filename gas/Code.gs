@@ -115,22 +115,79 @@ function writeRow(ss, sheetName, data) {
 
   const allVals = sheet.getDataRange().getValues();
   let rowIdx = -1;
+  let existing = null;
   for (let i = 1; i < allVals.length; i++) {
     if (allVals[i][0] === data.date) {
       rowIdx = i + 1;
+      try {
+        existing = allVals[i][1] ? JSON.parse(allVals[i][1]) : null;
+      } catch (e) {
+        existing = null;
+      }
       break;
     }
   }
 
+  const merged = mergeRow(existing, data);
   const now = new Date().toLocaleString('en-GB');
   if (rowIdx > 0) {
-    // 覆盖同日记录（支持重试和回填）
-    sheet.getRange(rowIdx, 1, 1, 3).setValues([[data.date, JSON.stringify(data), now]]);
+    sheet.getRange(rowIdx, 1, 1, 3).setValues([[data.date, JSON.stringify(merged), now]]);
   } else {
-    sheet.appendRow([data.date, JSON.stringify(data), now]);
+    sheet.appendRow([data.date, JSON.stringify(merged), now]);
   }
 
   return { ok: true, date: data.date };
+}
+
+/**
+ * Field-level merge of incoming into existing.
+ *
+ * Rules:
+ *  - Fields NOT present in `incoming` keep their value from `existing`.
+ *  - Fields present in `incoming` overwrite — including explicit `null`, `0`,
+ *    empty string, or empty array, which are all treated as meaningful values.
+ *    (e.g. sat_avg=null means "fewer than 3 votes, low confidence" per spec;
+ *    complaints=[] means "no complaints today, replace yesterday's list".)
+ *  - `date` is the row key, never overwritten. `submitted_at` is always set
+ *    to "now" on every merge so consumers can tell when the row last changed.
+ *  - `notes` is shallow-merged: keys present in incoming.notes overwrite,
+ *    keys only in existing.notes are kept. Pass `notes: null` (not an object)
+ *    if you want to actually clear notes.
+ *  - Arrays (complaints, mod_scores) are NOT merged — they're replaced wholesale
+ *    when present, because element identity in those lists isn't well-defined.
+ */
+function mergeRow(existing, incoming) {
+  if (!existing) {
+    // No prior row — store incoming as-is, but normalize submitted_at.
+    const fresh = Object.assign({}, incoming);
+    fresh.submitted_at = new Date().toISOString();
+    return fresh;
+  }
+
+  const merged = Object.assign({}, existing);
+
+  for (const key in incoming) {
+    if (!Object.prototype.hasOwnProperty.call(incoming, key)) continue;
+    if (key === 'date') continue;       // immutable row key
+    if (key === 'submitted_at') continue; // we set this ourselves below
+    const val = incoming[key];
+    if (val === undefined) continue;    // not present in the payload
+
+    // Shallow-merge notes when it's a plain object on both sides
+    if (key === 'notes' && val && typeof val === 'object' && !Array.isArray(val)) {
+      const existingNotes = (existing.notes && typeof existing.notes === 'object' && !Array.isArray(existing.notes))
+        ? existing.notes : {};
+      merged.notes = Object.assign({}, existingNotes, val);
+      continue;
+    }
+
+    // Everything else: take the incoming value verbatim (null / 0 / [] / "" all pass through).
+    merged[key] = val;
+  }
+
+  merged.date = existing.date;
+  merged.submitted_at = new Date().toISOString();
+  return merged;
 }
 
 function readAll(ss, sheetName) {
@@ -181,6 +238,130 @@ function setupSheets() {
       Logger.log('Tab already exists: ' + name);
     }
   });
+}
+
+// ════════════════════════════════════════════════════════════════
+// mergeRow unit tests — run any test_merge_case_* from the Apps Script editor.
+// Each prints PASS / FAIL via Logger; check the execution log to verify.
+// ════════════════════════════════════════════════════════════════
+function _assertEq(label, actual, expected) {
+  const a = JSON.stringify(actual);
+  const e = JSON.stringify(expected);
+  if (a === e) {
+    Logger.log('  PASS ' + label);
+    return true;
+  }
+  Logger.log('  FAIL ' + label + '\n    expected: ' + e + '\n    actual:   ' + a);
+  return false;
+}
+
+// Case 1: Bot pushes first, Mod submits later without the 6 bot fields.
+// Bot's quantitative fields must survive; Mod's qualitative fields are added.
+function test_merge_case_1() {
+  Logger.log('test_merge_case_1: Bot first, Mod later');
+  const existing = {
+    date: '2026-05-12',
+    members_total: 130413, members_new: 145,
+    messages: 185, active: 23,
+    sat_avg: 4.2, sat_votes: 18,
+    submitted_at: '2026-05-12T00:00:00Z'
+  };
+  const incoming = {
+    date: '2026-05-12', community: 'en',
+    mod: 'Alice, Bob', mods: ['Alice', 'Bob'],
+    mod_scores: [{name: 'Alice', score: 9}, {name: 'Bob', score: 8}],
+    mod_score: 9,
+    complaints: [{type: 'spam', count: 3, speed: '<5 min'}],
+    notes: {topic: 'NFT drop', highlights: 'Quiet day'}
+  };
+  const r = mergeRow(existing, incoming);
+  _assertEq('bot.members_total preserved', r.members_total, 130413);
+  _assertEq('bot.members_new preserved',   r.members_new,   145);
+  _assertEq('bot.messages preserved',      r.messages,      185);
+  _assertEq('bot.active preserved',        r.active,        23);
+  _assertEq('bot.sat_avg preserved',       r.sat_avg,       4.2);
+  _assertEq('bot.sat_votes preserved',     r.sat_votes,     18);
+  _assertEq('mod.mod_score added',         r.mod_score,     9);
+  _assertEq('mod.complaints added',        r.complaints,    [{type: 'spam', count: 3, speed: '<5 min'}]);
+  _assertEq('mod.notes added',             r.notes,         {topic: 'NFT drop', highlights: 'Quiet day'});
+}
+
+// Case 2: Mod fills first, Bot pushes later with only its 6 fields.
+// Mod's qualitative fields must survive; Bot's fields overwrite (no prior bot data).
+function test_merge_case_2() {
+  Logger.log('test_merge_case_2: Mod first, Bot later');
+  const existing = {
+    date: '2026-05-12', community: 'en',
+    mod: 'Alice', mods: ['Alice'], mod_scores: [{name: 'Alice', score: 8}], mod_score: 8,
+    complaints: [{type: 'wallet', count: 2, speed: '5–15 min'}],
+    notes: {topic: 'Wallet questions', highlights: 'None'},
+    submitted_at: '2026-05-12T10:00:00Z'
+  };
+  const incoming = {
+    date: '2026-05-12',
+    members_total: 130413, members_new: 145,
+    messages: 185, active: 23,
+    sat_avg: 4.2, sat_votes: 18
+  };
+  const r = mergeRow(existing, incoming);
+  _assertEq('mod.mod_score preserved',  r.mod_score,  8);
+  _assertEq('mod.complaints preserved', r.complaints, [{type: 'wallet', count: 2, speed: '5–15 min'}]);
+  _assertEq('mod.notes preserved',      r.notes,      {topic: 'Wallet questions', highlights: 'None'});
+  _assertEq('bot.members_total added',  r.members_total, 130413);
+  _assertEq('bot.sat_avg added',        r.sat_avg,    4.2);
+}
+
+// Case 3: Bot pushes sat_avg=null, sat_votes=2 (low confidence, fewer than 3 votes).
+// null must be preserved as null, NOT dropped or converted.
+function test_merge_case_3() {
+  Logger.log('test_merge_case_3: explicit null preserves as null');
+  const existing = {
+    date: '2026-05-12',
+    sat_avg: 4.5, sat_votes: 10,
+    submitted_at: '2026-05-12T08:00:00Z'
+  };
+  const incoming = { date: '2026-05-12', sat_avg: null, sat_votes: 2 };
+  const r = mergeRow(existing, incoming);
+  _assertEq('null overwrites 4.5', r.sat_avg, null);
+  _assertEq('sat_votes overwrites', r.sat_votes, 2);
+}
+
+// Case 4: Mod sets complaints to empty array — must be stored as [], not dropped.
+function test_merge_case_4() {
+  Logger.log('test_merge_case_4: empty array overwrites');
+  const existing = {
+    date: '2026-05-12',
+    complaints: [{type: 'spam', count: 5, speed: '<5 min'}],
+    submitted_at: '2026-05-12T08:00:00Z'
+  };
+  const incoming = { date: '2026-05-12', complaints: [] };
+  const r = mergeRow(existing, incoming);
+  _assertEq('complaints replaced with []', r.complaints, []);
+}
+
+// Case 5: notes shallow-merge — keys only in existing.notes are kept,
+// keys present in incoming.notes overwrite.
+function test_merge_case_5() {
+  Logger.log('test_merge_case_5: notes shallow merge');
+  const existing = {
+    date: '2026-05-12',
+    notes: {topic: 'A', highlights: 'B'},
+    submitted_at: '2026-05-12T08:00:00Z'
+  };
+  const incoming = { date: '2026-05-12', notes: {topic: 'C'} };
+  const r = mergeRow(existing, incoming);
+  _assertEq('notes.topic overwritten', r.notes.topic, 'C');
+  _assertEq('notes.highlights kept',   r.notes.highlights, 'B');
+}
+
+// Runs all 5 cases in one go for convenience.
+function test_merge_all() {
+  test_merge_case_1();
+  test_merge_case_2();
+  test_merge_case_3();
+  test_merge_case_4();
+  test_merge_case_5();
+  Logger.log('--- All merge tests done. Scroll up to check for any FAIL lines. ---');
 }
 
 // ════════════════════════════════════════════════════════════════

@@ -53,8 +53,18 @@ Each community's data is mirrored into `localStorage['bgw_data_{c}']` after ever
 
 The Google Apps Script Web App that backs writes from `bgw_report_v2.html` (JSONP GET `?action=save`) and from bgw-v4 / moew-airdrop-bot (JSON POST) lives in `gas/`. Apps Script does NOT auto-sync with git — this directory is the **canonical source**, but the running Web App is whatever was last pasted into the Apps Script editor.
 
-- `gas/Code.gs` — backend logic: `doGet` (JSONP for HTML tool), `doPost` (Bot teams), `writeRow`, `readAll`, `setupSheets`, `testBotPost`.
+- `gas/Code.gs` — backend logic: `doGet` (JSONP for HTML tool), `doPost` (Bot teams), `writeRow`, `mergeRow`, `readAll`, `setupSheets`, `testBotPost`, plus `test_merge_case_1..5` / `test_merge_all` unit tests.
 - `gas/appsscript.json` — manifest. `timeZone: Asia/Shanghai`, V8 runtime, Web App `executeAs: USER_DEPLOYING` + `access: ANYONE_ANONYMOUS`.
+
+### Field-level merge in writeRow
+
+`writeRow` does NOT clobber the row when the same date already exists. It reads the prior JSON, calls `mergeRow(existing, incoming)`, and writes the merged result. This lets the community monitor bot and a moderator write to the same daily row without stepping on each other:
+
+- Fields **not present** in `incoming` keep their existing value.
+- Fields **present** in `incoming` overwrite — including explicit `null`, `0`, empty string, or empty array. These are all real values per the bot spec (`sat_avg: null` = "fewer than 3 votes, low confidence"; `complaints: []` = "no complaints today, replace yesterday's list").
+- `date` is the row key and never overwritten. `submitted_at` is always refreshed to the current time on every merge.
+- `notes` is the one **shallow-merge** field: keys in `incoming.notes` overwrite, keys only in `existing.notes` are kept. Pass `notes: null` (not an object) to actually clear notes.
+- Other arrays (`complaints`, `mod_scores`) are replaced wholesale when present — element identity in those lists isn't well-defined enough to merge.
 
 ### Required Script Property (one-time setup)
 
@@ -71,7 +81,7 @@ Apps Script can't pull from git, so the loop is manual:
 1. Edit `gas/Code.gs` here, commit, push.
 2. Open the Apps Script editor for the deployed Web App project.
 3. Copy the new `Code.gs` content, paste over the existing file in the editor.
-4. (Optional) Run `testBotPost()` in the editor to verify.
+4. Run `test_merge_all()` to verify the merge logic (Logger output shows PASS/FAIL per case). Optionally also run `testBotPost()` for an end-to-end smoke test.
 5. **Deploy → Manage Deployments → Edit current deployment → New version** (otherwise the public Web App URL still serves the old code).
 
 Steps 2–5 are required for changes to take effect.
