@@ -244,6 +244,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
     <span style="display:inline-block;width:1px;height:18px;background:var(--border);margin:0 4px;align-self:center"></span>
     <button class="ctab" id="ctab-bot_prediction" onclick="setCom('bot_prediction',this)">🤖 Prediction Bot</button>
     <button class="ctab" id="ctab-bot_airdrop" onclick="setCom('bot_airdrop',this)">🤖 Airdrop Bot</button>
+    <span style="display:inline-block;width:1px;height:18px;background:var(--border);margin:0 4px;align-self:center"></span>
+    <button class="ctab" id="ctab-issues" onclick="setCom('issues',this)">📋 Top Issues</button>
     <button class="cfg-toggle" onclick="toggleCfg()">⚙ Config</button>
   </div>
 
@@ -462,6 +464,92 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
       </div>
     </div>
   </div>
+
+  <!-- TOP ISSUES VIEW -->
+  <div id="issues-view" style="display:none">
+
+    <div class="panel">
+      <div class="pt">Filters</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <div class="f" style="min-width:140px">
+          <label>Time range</label>
+          <select id="iss-range" onchange="renderIssues()">
+            <option value="14" selected>Past 14 days</option>
+            <option value="7">Past 7 days</option>
+            <option value="30">Past 30 days</option>
+            <option value="60">Past 60 days</option>
+          </select>
+        </div>
+        <div class="f" style="min-width:140px">
+          <label>Community</label>
+          <select id="iss-com" onchange="renderIssues()">
+            <option value="all" selected>All communities</option>
+            <option value="en">EN only</option>
+            <option value="cn">中文 only</option>
+            <option value="pred">Prediction only</option>
+          </select>
+        </div>
+        <div class="f" style="min-width:120px">
+          <label>Top N</label>
+          <select id="iss-topn" onchange="renderIssues()">
+            <option value="20" selected>Top 20</option>
+            <option value="10">Top 10</option>
+            <option value="50">Top 50</option>
+            <option value="100">All</option>
+          </select>
+        </div>
+        <div class="f" style="min-width:160px">
+          <label>Smart grouping (Gemini)</label>
+          <select id="iss-group" onchange="renderIssues()">
+            <option value="off" selected>Off (exact match)</option>
+            <option value="on">On (semantic merge)</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:6px">
+          <button class="exp-btn primary" onclick="expIssuesImg()" style="padding:7px 14px">📸 PNG</button>
+          <button class="exp-btn" onclick="expIssuesMD()" style="padding:7px 14px">⬇ .md</button>
+          <button class="refresh-btn" onclick="syncData()">🔄 Refresh</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="iss-status" class="bot-status fresh">
+      <div class="bot-status-icon">📋</div>
+      <div>
+        <div class="bot-status-main" id="iss-status-title">Top Issues — past 14 days</div>
+        <div class="bot-status-sub" id="iss-status-sub">Loading...</div>
+      </div>
+    </div>
+
+    <div class="panel" id="iss-summary-panel" style="display:none">
+      <div class="pt">Quick Stats</div>
+      <div class="bot-kpi-grid" id="iss-stats"></div>
+    </div>
+
+    <div class="history-panel">
+      <div class="hist-title">
+        <span>Top Issues by occurrence</span>
+        <span id="iss-count" style="color:var(--text3);font-weight:400;font-size:11px"></span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="hist-table">
+          <thead>
+            <tr>
+              <th style="width:30px">#</th>
+              <th>Issue type</th>
+              <th>Count</th>
+              <th>Communities</th>
+              <th>Avg speed</th>
+              <th>First seen</th>
+              <th>Last seen</th>
+            </tr>
+          </thead>
+          <tbody id="iss-body"></tbody>
+        </table>
+        <div id="iss-empty" class="no-data" style="display:none">No complaints in selected range.</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="rc-stage"></div>
@@ -482,11 +570,13 @@ const COM_LABELS = {
   cn: '中文社区',
   pred: 'Prediction Group',
   bot_prediction: 'Prediction Bot',
-  bot_airdrop: 'Airdrop Bot'
+  bot_airdrop: 'Airdrop Bot',
+  issues: 'Top Issues'
 };
 const ALL_COMS = ['en','cn','pred','bot_prediction','bot_airdrop'];
 const BOT_COMS = ['bot_prediction','bot_airdrop'];
 function isBotCom(c) { return BOT_COMS.includes(c); }
+function isIssuesCom(c) { return c === 'issues'; }
 
 // ─────────────────────────────────────────────
 // INIT
@@ -540,21 +630,29 @@ function setMode(m) {
 
 function updateViewVisibility() {
   const isBot = isBotCom(com);
-  document.getElementById('mod-view').style.display = (mode === 'mod' && !isBot) ? '' : 'none';
-  document.getElementById('cm-view').style.display = (mode === 'cm' && !isBot) ? '' : 'none';
+  const isIssues = isIssuesCom(com);
+  const isCommunity = !isBot && !isIssues;
+  document.getElementById('mod-view').style.display = (mode === 'mod' && isCommunity) ? '' : 'none';
+  document.getElementById('cm-view').style.display = (mode === 'cm' && isCommunity) ? '' : 'none';
   document.getElementById('bot-view').style.display = isBot ? '' : 'none';
-  // Hide mod/cm switcher when in bot tab
-  const modeRow = document.querySelector('.mode-row, [class*="mode"]');
+  const iv = document.getElementById('issues-view');
+  if (iv) iv.style.display = isIssues ? '' : 'none';
   const btnMod = document.getElementById('btn-mod');
   const btnCm = document.getElementById('btn-cm');
-  if (btnMod) btnMod.style.display = isBot ? 'none' : '';
-  if (btnCm) btnCm.style.display = isBot ? 'none' : '';
+  if (btnMod) btnMod.style.display = isCommunity ? '' : 'none';
+  if (btnCm) btnCm.style.display = isCommunity ? '' : 'none';
 }
 
 function setCom(c, btn) {
   com = c;
   document.querySelectorAll('.ctab').forEach(t => t.classList.remove('active'));
   if (btn) btn.classList.add('active');
+
+  if (isIssuesCom(c)) {
+    updateViewVisibility();
+    renderIssues();
+    return;
+  }
 
   if (isBotCom(c)) {
     // Bot tab: 强制 CM 视图
@@ -1966,6 +2064,285 @@ function expBotMD() {
   const b = new Blob([md], { type: 'text/markdown' });
   const a = document.createElement('a');
   a.download = `${com}-${report.date}.md`;
+  a.href = URL.createObjectURL(b);
+  a.click();
+  showToast('.md downloaded ✓', 'success');
+}
+
+// ════════════════════════════════════════════════════════════════
+// TOP ISSUES VIEW
+// ════════════════════════════════════════════════════════════════
+let issuesGroupingCache = null; // cache Gemini grouping output keyed by signature
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function collectComplaints(rangeDays, comFilter) {
+  // 收集指定时间范围、指定社区的所有客诉条目
+  const today = new Date();
+  const start = new Date(today);
+  start.setDate(start.getDate() - rangeDays + 1);
+  const startStr = start.toISOString().slice(0,10);
+  const endStr = today.toISOString().slice(0,10);
+
+  const coms = comFilter === 'all' ? ['en','cn','pred'] : [comFilter];
+  const items = []; // each: { type, count, speed, date, community }
+  coms.forEach(c => {
+    (allData[c] || []).forEach(rec => {
+      const d = rec.date;
+      if (!d || d < startStr || d > endStr) return;
+      (rec.complaints || []).forEach(cp => {
+        if (!cp || !cp.type || cp.type === '—') return;
+        items.push({
+          type: String(cp.type).trim(),
+          count: parseInt(cp.count) || 1,
+          speed: cp.speed || '—',
+          date: d,
+          community: c
+        });
+      });
+    });
+  });
+  return { items, startStr, endStr };
+}
+
+function exactGroupComplaints(items) {
+  // 简单按 type 精确匹配
+  const map = {};
+  items.forEach(it => {
+    const key = it.type.toLowerCase().trim();
+    if (!map[key]) {
+      map[key] = {
+        type: it.type,
+        count: 0,
+        coms: new Set(),
+        speeds: [],
+        firstDate: it.date,
+        lastDate: it.date
+      };
+    }
+    const g = map[key];
+    g.count += it.count;
+    g.coms.add(it.community);
+    g.speeds.push(it.speed);
+    if (it.date < g.firstDate) g.firstDate = it.date;
+    if (it.date > g.lastDate) g.lastDate = it.date;
+  });
+  return Object.values(map);
+}
+
+async function geminiGroupComplaints(items) {
+  // 用 Gemini 把语义相近的问题归并。失败时降级到 exact match。
+  if (!items.length) return [];
+  const sig = items.map(i => i.type.toLowerCase()).sort().join('|');
+  if (issuesGroupingCache && issuesGroupingCache.sig === sig) {
+    return applyGrouping(items, issuesGroupingCache.groups);
+  }
+
+  // 调用 Gemini API（前端直接调，需要用户配置 API key）
+  const apiKey = localStorage.getItem('bgw_gemini_key') || '';
+  if (!apiKey) {
+    const k = prompt('Smart grouping uses Gemini API. Paste your Gemini API key (stored locally only):');
+    if (!k) return exactGroupComplaints(items);
+    localStorage.setItem('bgw_gemini_key', k.trim());
+  }
+
+  showToast('Calling Gemini for smart grouping...');
+  try {
+    const uniqueTypes = [...new Set(items.map(i => i.type))];
+    const aiPrompt = `You are categorizing customer support complaint types from a crypto wallet community.
+
+Below is a list of raw complaint descriptions. Group them by SEMANTIC meaning — e.g. "Withdrawal stuck", "Buy crypto stuck", "Swap pending" should all be grouped as "Transaction stuck".
+
+Return ONLY a JSON object mapping each ORIGINAL complaint string to a canonical short category label (max 6 words). Format:
+{
+  "Withdrawal stuck": "Transaction stuck",
+  "Buy crypto got stucked": "Transaction stuck",
+  ...
+}
+
+Raw complaints:
+${JSON.stringify(uniqueTypes)}
+
+Output JSON only, no markdown, no commentary.`;
+
+    const key = localStorage.getItem('bgw_gemini_key');
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${key}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        contents: [{parts: [{text: aiPrompt}]}],
+        generationConfig: {temperature: 0.1}
+      })
+    });
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const cleaned = text.replace(/```json|```/g, '').trim();
+    const mapping = JSON.parse(cleaned);
+    issuesGroupingCache = { sig, groups: mapping };
+    showToast('Smart grouping ready ✓', 'success');
+    return applyGrouping(items, mapping);
+  } catch(e) {
+    console.warn('Gemini grouping failed:', e);
+    showToast('Smart grouping failed, using exact match', 'error');
+    return exactGroupComplaints(items);
+  }
+}
+
+function applyGrouping(items, mapping) {
+  const map = {};
+  items.forEach(it => {
+    const canonical = mapping[it.type] || it.type;
+    const key = canonical.toLowerCase().trim();
+    if (!map[key]) {
+      map[key] = {
+        type: canonical,
+        count: 0,
+        coms: new Set(),
+        speeds: [],
+        variants: new Set(),
+        firstDate: it.date,
+        lastDate: it.date
+      };
+    }
+    const g = map[key];
+    g.count += it.count;
+    g.coms.add(it.community);
+    g.speeds.push(it.speed);
+    g.variants.add(it.type);
+    if (it.date < g.firstDate) g.firstDate = it.date;
+    if (it.date > g.lastDate) g.lastDate = it.date;
+  });
+  return Object.values(map);
+}
+
+function avgSpeed(speeds) {
+  const m = {'<5 min': 2.5, '5–15 min': 10, '15–30 min': 22.5, '>30 min': 35};
+  const nums = speeds.map(s => m[s]).filter(x => x !== undefined);
+  if (!nums.length) return '—';
+  const avg = nums.reduce((a,b) => a+b, 0) / nums.length;
+  if (avg < 5) return '<5 min';
+  if (avg < 15) return '5–15 min';
+  if (avg < 30) return '15–30 min';
+  return '>30 min';
+}
+
+async function renderIssues() {
+  const range = parseInt(document.getElementById('iss-range').value);
+  const comFilter = document.getElementById('iss-com').value;
+  const topN = parseInt(document.getElementById('iss-topn').value);
+  const useGemini = document.getElementById('iss-group').value === 'on';
+
+  const { items, startStr, endStr } = collectComplaints(range, comFilter);
+
+  document.getElementById('iss-status-title').textContent =
+    `Top Issues — ${COM_LABELS[comFilter] || 'All communities'}`;
+  document.getElementById('iss-status-sub').textContent =
+    `${startStr} → ${endStr} · ${items.length} raw complaint entries`;
+
+  if (items.length === 0) {
+    document.getElementById('iss-body').innerHTML = '';
+    document.getElementById('iss-empty').style.display = '';
+    document.getElementById('iss-count').textContent = '';
+    document.getElementById('iss-summary-panel').style.display = 'none';
+    return;
+  }
+  document.getElementById('iss-empty').style.display = 'none';
+
+  let groups;
+  if (useGemini) {
+    groups = await geminiGroupComplaints(items);
+  } else {
+    groups = exactGroupComplaints(items);
+  }
+
+  groups.sort((a, b) => b.count - a.count);
+  const top = groups.slice(0, topN);
+
+  // Stats
+  document.getElementById('iss-summary-panel').style.display = '';
+  document.getElementById('iss-stats').innerHTML = `
+    <div class="bot-kpi"><div class="bot-kpi-l">Total complaints</div><div class="bot-kpi-v">${items.reduce((s,i) => s+i.count, 0)}</div></div>
+    <div class="bot-kpi"><div class="bot-kpi-l">Unique categories</div><div class="bot-kpi-v">${groups.length}</div></div>
+    <div class="bot-kpi"><div class="bot-kpi-l">Days covered</div><div class="bot-kpi-v">${range}</div></div>
+    <div class="bot-kpi"><div class="bot-kpi-l">Top 1 share</div><div class="bot-kpi-v">${top[0] ? ((top[0].count / items.reduce((s,i)=>s+i.count,0)) * 100).toFixed(0) : 0}<span style="font-size:13px;color:var(--text3)">%</span></div></div>
+    <div class="bot-kpi"><div class="bot-kpi-l">Communities</div><div class="bot-kpi-v">${new Set(items.map(i=>i.community)).size}</div></div>
+  `;
+
+  document.getElementById('iss-count').textContent =
+    `(showing top ${top.length} of ${groups.length})`;
+
+  document.getElementById('iss-body').innerHTML = top.map((g, i) => {
+    const variants = g.variants ? [...g.variants].filter(v => v !== g.type).slice(0,3) : [];
+    const variantStr = variants.length ? `<div style="font-size:10px;color:var(--text3);margin-top:2px">incl: ${variants.map(escapeHtml).join(' / ')}${g.variants.size > 3 ? '…' : ''}</div>` : '';
+    return `<tr>
+      <td style="font-family:'DM Mono',monospace;color:var(--text3)">${i + 1}</td>
+      <td style="max-width:340px">
+        <div style="font-weight:500">${escapeHtml(g.type)}</div>
+        ${variantStr}
+      </td>
+      <td style="font-family:'DM Mono',monospace;font-weight:600">${g.count}</td>
+      <td style="font-size:11px">${[...g.coms].map(c => `<span class="score-pill" style="background:var(--brand-d);color:var(--brand);margin-right:3px">${c}</span>`).join('')}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px">${avgSpeed(g.speeds)}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${g.firstDate.slice(5)}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${g.lastDate.slice(5)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function expIssuesImg() {
+  // 截屏 issues-view 整个面板
+  const el = document.getElementById('issues-view');
+  if (!el) return;
+  showToast('Generating image...');
+  setTimeout(() => {
+    html2canvas(el, { backgroundColor: '#f5f4f9', scale: 2, useCORS: true, logging: false })
+      .then(canvas => {
+        const a = document.createElement('a');
+        a.download = `top-issues-${new Date().toISOString().slice(0,10)}.png`;
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+        showToast('PNG downloaded ✓', 'success');
+      })
+      .catch(() => showToast('Image export failed', 'error'));
+  }, 200);
+}
+
+function expIssuesMD() {
+  const range = parseInt(document.getElementById('iss-range').value);
+  const comFilter = document.getElementById('iss-com').value;
+  const { items, startStr, endStr } = collectComplaints(range, comFilter);
+
+  if (items.length === 0) { showToast('No data to export', 'error'); return; }
+
+  // 用当前显示在表格里的分组（不重新调 Gemini）
+  const rows = document.querySelectorAll('#iss-body tr');
+  let md = `# Top Issues Report\n\n`;
+  md += `**Range:** ${startStr} → ${endStr} (${range} days)\n`;
+  md += `**Community:** ${COM_LABELS[comFilter] || 'All'}\n`;
+  md += `**Total raw entries:** ${items.length}\n\n`;
+  md += `## Top Issues\n\n`;
+  md += `| # | Issue | Count | Communities | Avg speed | First | Last |\n`;
+  md += `|---|-------|-------|-------------|-----------|-------|------|\n`;
+  rows.forEach((tr, i) => {
+    const tds = tr.querySelectorAll('td');
+    if (tds.length < 7) return;
+    const issue = tds[1].querySelector('div')?.textContent?.trim() || '';
+    md += `| ${tds[0].textContent} | ${issue} | ${tds[2].textContent} | ${tds[3].textContent.trim()} | ${tds[4].textContent} | ${tds[5].textContent} | ${tds[6].textContent} |\n`;
+  });
+  md += `\n---\n*Generated ${new Date().toLocaleString()}*`;
+
+  const b = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  a.download = `top-issues-${new Date().toISOString().slice(0,10)}.md`;
   a.href = URL.createObjectURL(b);
   a.click();
   showToast('.md downloaded ✓', 'success');
