@@ -1,12 +1,10 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Overview
 
 A single-file, static GitHub Pages site: **`bgw_report_v2.html`**. No build system, no server, no dependencies beyond CDN-hosted Chart.js + html2canvas. Open the HTML in a browser and it works; deploy by pushing to GitHub and serving via Pages.
 
-This repo is one of three "BGW community" repos under `/Volumes/Cathy/bgw-projects/`. It is the **reader/dashboard** side of the Shared Data Pipeline. The frontend doesn't run on Railway, but the repo also hosts the canonical source of the GAS Apps Script backend under `gas/` — see the "GAS Apps Script source" section below.
+This repo is one of several "BGW community" repos under `/Volumes/Cathy/bgw-projects/`. It is the **reader/dashboard** side of the Shared Data Pipeline. The frontend doesn't run on Railway, but the repo also hosts the canonical source of the GAS Apps Script backend under `gas/` — see the "GAS Apps Script source" section below.
 
 ## What `bgw_report_v2.html` does
 
