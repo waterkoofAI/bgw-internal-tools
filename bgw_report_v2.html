@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BGW Community Report v2</title>
+<!-- build: stage-d.1 2026-05-12 — bot auto-fill overrides + date-change rebind + Asia/Shanghai today() -->
+<meta name="bgw-build" content="stage-d.1 2026-05-12">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
@@ -83,6 +86,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .score-bar-l{font-size:11px;color:var(--text2);margin-bottom:4px}
 .score-bar{height:7px;background:rgba(83,74,183,0.12);border-radius:4px;overflow:hidden}
 .score-fill{height:7px;background:var(--brand);border-radius:4px;transition:width .4s}
+/* Stage D: bot auto-fill badge */
+.bot-fill-badge{display:none;font-size:11px;color:var(--brand);background:var(--brand-d);border:1px solid rgba(83,74,183,0.2);border-radius:6px;padding:4px 8px;margin-top:4px;align-self:flex-start;font-family:'DM Sans',sans-serif}
+.bot-fill-badge.show{display:inline-block}
+input:disabled{background:var(--bg);color:var(--text2);cursor:not-allowed;opacity:0.7}
 /* sat */
 .sat-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .sat-f{display:flex;align-items:center;gap:7px}
@@ -272,10 +279,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
       <div class="ig5">
         <div style="grid-column:span 2"><input type="number" id="mod-tot" placeholder="e.g. 1270" min="0"></div>
       </div>
+      <div class="bot-fill-badge" id="bf-tot"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
-        <div class="f"><label>New members today</label><input type="number" id="mod-new" placeholder="e.g. 22" min="0"></div>
-        <div class="f" id="f-msgs"><label id="lbl-msgs">Messages today</label><input type="number" id="mod-msgs" placeholder="e.g. 410" min="0"></div>
-        <div class="f" id="f-active"><label id="lbl-active">Active users today</label><input type="number" id="mod-active" placeholder="e.g. 102" min="0"></div>
+        <div class="f"><label>New members today</label><input type="number" id="mod-new" placeholder="e.g. 22" min="0"><div class="bot-fill-badge" id="bf-new"></div></div>
+        <div class="f" id="f-msgs"><label id="lbl-msgs">Messages today</label><input type="number" id="mod-msgs" placeholder="e.g. 410" min="0"><div class="bot-fill-badge" id="bf-msgs"></div></div>
+        <div class="f" id="f-active"><label id="lbl-active">Active users today</label><input type="number" id="mod-active" placeholder="e.g. 102" min="0"><div class="bot-fill-badge" id="bf-active"></div></div>
         <div class="f" id="f-ugc" style="display:none"><label id="lbl-ugc">UGC posts today</label><input type="number" id="mod-ugc" placeholder="e.g. 18" min="0"></div>
         <div class="f" id="f-preds" style="display:none"><label>Predictions shared today</label><input type="number" id="mod-preds" placeholder="e.g. 24" min="0"></div>
         <div class="f" id="f-core" style="display:none"><label>Core active users today</label><input type="number" id="mod-core" placeholder="e.g. 18" min="0"></div>
@@ -303,6 +311,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
         <div class="sat-f" style="margin-left:8px"><label>🗳 Total votes</label><input type="number" id="mod-sv" value="0" min="0" oninput="updSat()"></div>
         <div class="sat-badge" id="sat-badge">4.2 / 5 · 0 votes</div>
       </div>
+      <div class="bot-fill-badge" id="bf-sa"></div>
+      <div class="bot-fill-badge" id="bf-sv" style="margin-top:2px"></div>
     </div>
 
     <div class="panel">
@@ -609,11 +619,26 @@ window.onload = function() {
   const tagInput = document.getElementById('mod-name-input');
   if (tagInput) tagInput.addEventListener('keydown', handleTagKey);
 
+  // Stage D: when the moderator changes the date (e.g. to backfill yesterday),
+  // re-check which fields the bot has already filled for THAT date.
+  const dateInput = document.getElementById('mod-date');
+  if (dateInput) {
+    dateInput.addEventListener('change', () => {
+      if (mode === 'mod') applyBotFilledOverrides(com).catch(e => console.warn('[bot-fill]', e));
+    });
+  }
+
   renderLastSubmitInfo();
+  // Stage D: on initial load (default state = mod + en), reflect any data the
+  // community monitor bot has already pushed for today.
+  if (mode === 'mod') applyBotFilledOverrides(com).catch(e => console.warn('[bot-fill]', e));
 };
 
 function today() {
-  return new Date().toISOString().slice(0,10);
+  // Asia/Shanghai calendar day. Bot pushes use this same timezone, so date matches
+  // are reliable even when the moderator's machine is in a different timezone.
+  // 'en-CA' locale yields the ISO-like YYYY-MM-DD format.
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
 }
 
 // ─────────────────────────────────────────────
@@ -626,6 +651,7 @@ function setMode(m) {
   document.getElementById('btn-cm').classList.toggle('active', m === 'cm');
   updateViewVisibility();
   if (m === 'cm' || isBotCom(com)) renderDashboard();
+  if (m === 'mod') applyBotFilledOverrides(com).catch(e => console.warn('[bot-fill]', e));
 }
 
 function updateViewVisibility() {
@@ -678,6 +704,86 @@ function setCom(c, btn) {
   updateViewVisibility();
   renderLastSubmitInfo();
   if (mode === 'cm') renderDashboard();
+  if (mode === 'mod') applyBotFilledOverrides(com).catch(e => console.warn('[bot-fill]', e));
+}
+
+// ─────────────────────────────────────────────
+// BOT AUTO-FILL OVERRIDES (Stage D)
+// ─────────────────────────────────────────────
+// 6 fields the community monitor bot owns. Order is [inputId, badgeId, recordField].
+// pred has no bot — applyBotFilledOverrides() clears overrides on pred and exits.
+const BOT_FIELDS = [
+  ['mod-tot',    'bf-tot',    'members_total'],
+  ['mod-new',    'bf-new',    'members_new'],
+  ['mod-msgs',   'bf-msgs',   'messages'],
+  ['mod-active', 'bf-active', 'active'],
+  ['mod-sa',     'bf-sa',     'sat_avg'],
+  ['mod-sv',     'bf-sv',     'sat_votes'],
+];
+
+function clearBotFill(inputId, badgeId) {
+  const input = document.getElementById(inputId);
+  const badge = document.getElementById(badgeId);
+  if (input) {
+    input.disabled = false;
+    delete input.dataset.botFilled;
+  }
+  if (badge) {
+    badge.classList.remove('show');
+    badge.textContent = '';
+  }
+}
+
+function isBotFilled(inputId) {
+  const el = document.getElementById(inputId);
+  return !!(el && el.dataset.botFilled === 'true');
+}
+
+async function applyBotFilledOverrides(c) {
+  // Always reset first — switching tabs shouldn't carry disabled state across communities.
+  BOT_FIELDS.forEach(([inputId, badgeId]) => clearBotFill(inputId, badgeId));
+
+  // No bot for pred (or any non-en/cn). Just reset and bail.
+  if (c !== 'en' && c !== 'cn') return;
+
+  // Pull the latest data from GAS so we don't miss a fresh push.
+  try {
+    await fetchCom(c);
+  } catch (e) {
+    console.warn('[bot-fill] fetchCom failed; using local cache', e);
+  }
+
+  // Match against the date currently in the form — when the moderator changes
+  // mod-date to fill a past day, we should reflect THAT day's bot row instead
+  // of forcing today's. Falls back to today() if the input is empty for any reason.
+  const dateInput = document.getElementById('mod-date');
+  const dateStr = (dateInput && dateInput.value) || today();
+  const rec = (allData[c] || []).find(r => r.date === dateStr);
+  if (!rec) return;
+
+  const isCN = c === 'cn';
+  const label = isCN
+    ? '🤖 由社区监控 Bot 自动填充'
+    : '🤖 Auto-filled by community monitor bot';
+
+  BOT_FIELDS.forEach(([inputId, badgeId, field]) => {
+    const val = rec[field];
+    // Per spec: 0 counts as filled. Skip only when undefined or null.
+    if (val === undefined || val === null) return;
+    const input = document.getElementById(inputId);
+    const badge = document.getElementById(badgeId);
+    if (!input) return;
+    input.value = val;
+    input.disabled = true;
+    input.dataset.botFilled = 'true';
+    if (badge) {
+      badge.textContent = label;
+      badge.classList.add('show');
+    }
+  });
+
+  // sat-badge live-display still keys off mod-sa/mod-sv values; trigger a refresh.
+  if (typeof updSat === 'function') updSat();
 }
 
 function updateComUI() {
@@ -1059,7 +1165,11 @@ async function submitReport() {
   const isCN = com === 'cn';
   if (!date) { showToast(isCN ? '请填写日期' : 'Please set a date', 'error'); return; }
   if (mods.length === 0) { showToast(isCN ? '请至少添加一位 Mod' : 'Please add at least one mod', 'error'); return; }
-  if (!total) { showToast(isCN ? '请填写总成员数' : 'Please enter total members', 'error'); return; }
+  // Bypass the "please enter total members" check when the field is bot-filled — the bot
+  // always pushes a non-zero value but we don't want to gate submission on it.
+  if (!total && !isBotFilled('mod-tot')) {
+    showToast(isCN ? '请填写总成员数' : 'Please enter total members', 'error'); return;
+  }
 
   const isPred = com === 'pred';
   const modScores = getModScores();
@@ -1096,6 +1206,14 @@ async function submitReport() {
     report.active = parseInt(document.getElementById('mod-active').value) || 0;
   }
 
+  // Stage D: build a stripped copy for the GAS push that omits bot-owned fields.
+  // The local save keeps the full report (including bot values, which were read
+  // back from the disabled inputs) so the offline view stays complete.
+  const gasPayload = Object.assign({}, report);
+  BOT_FIELDS.forEach(([inputId, _, field]) => {
+    if (isBotFilled(inputId)) delete gasPayload[field];
+  });
+
   // Save locally
   const existing = allData[com].findIndex(r => r.date === date);
   if (existing >= 0) allData[com][existing] = report;
@@ -1111,7 +1229,7 @@ async function submitReport() {
   btn.disabled = true;
   btn.textContent = isCN ? '提交中...' : 'Submitting...';
 
-  if (gasUrl) await pushToGAS(report);
+  if (gasUrl) await pushToGAS(gasPayload);
   showToast(isCN ? '日报已提交 ✓' : 'Report submitted ✓', 'success');
 
   btn.disabled = false;
