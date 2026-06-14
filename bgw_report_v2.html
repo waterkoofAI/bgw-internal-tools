@@ -1229,7 +1229,22 @@ async function submitReport() {
   btn.disabled = true;
   btn.textContent = isCN ? '提交中...' : 'Submitting...';
 
-  if (gasUrl) await pushToGAS(gasPayload);
+  // FIX 前端假成功 (2026-06-15): actually check the GAS write result. pushToGAS is JSONP —
+  // a stale url / dead deployment / timeout resolves to {ok:false}, but the old code showed
+  // "日报已提交 ✓" regardless, so a mod whose link was stale kept "submitting" into the void
+  // with zero feedback (en mod case). Now: only claim success on ok:true; on failure tell
+  // them to check the link and retry. (Local copy was already saved above, so nothing is lost.)
+  if (gasUrl) {
+    const res = await pushToGAS(gasPayload);
+    if (!res || !res.ok) {
+      const why = (res && res.error) ? res.error
+                  : (isCN ? '检查页面顶部 GAS 链接 / 网络后重试' : 'check the GAS link at the top / your network, then retry');
+      showToast(isCN ? ('❌ 未提交成功：' + why) : ('❌ Submit failed: ' + why), 'error');
+      btn.disabled = false;
+      btn.textContent = isCN ? '✓ 提交日报' : '✓ Submit Report';
+      return;   // don't claim success, don't reveal export — let the mod fix the link & retry
+    }
+  }
   showToast(isCN ? '日报已提交 ✓' : 'Report submitted ✓', 'success');
 
   btn.disabled = false;

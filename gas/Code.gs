@@ -104,6 +104,68 @@ function doPost(e) {
 // 共享工具函数
 // ════════════════════════════════════════════════════════════════
 
+// ── date-merge 坑修复 helpers (2026-06-15) ──────────────────────────────
+// Sheets silently coerces a "YYYY-MM-DD" string into a Date cell. The old lookup
+// `allVals[i][0] === data.date` compared a Date object to a string → always false →
+// every writer APPENDED a duplicate row instead of merging. Real-world damage: cn
+// 2026-06-13 ended up with two rows (bot objective + mod subjective), and the daily
+// report read only the first → showed 待补 even though the mods HAD filled their scores.
+function normDate_(v, tz) {
+  if (Object.prototype.toString.call(v) === '[object Date]') {
+    return Utilities.formatDate(v, tz || 'UTC', 'yyyy-MM-dd');
+  }
+  return String(v).slice(0, 10);
+}
+
+// Like mergeRow but skips empty incoming values (null/''/[]), so collapsing a bot row
+// with a mod row keeps each side's real values instead of a blank clobbering a real one.
+function mergeNonEmpty_(a, b) {
+  const m = Object.assign({}, a || {});
+  for (const k in b) {
+    if (!Object.prototype.hasOwnProperty.call(b, k)) continue;
+    const v = b[k];
+    if (v === null || v === undefined || v === '') continue;
+    if (Array.isArray(v) && v.length === 0) continue;
+    if (k === 'notes' && v && typeof v === 'object' && !Array.isArray(v)) {
+      m.notes = Object.assign({}, (a && a.notes) || {}, v);
+      continue;
+    }
+    m[k] = v;
+  }
+  return m;
+}
+
+// ONE-TIME cleanup: collapse pre-fix duplicate-date rows into one merged row per date.
+// Run manually from the Apps Script editor ONCE after deploying (Run → dedupeAllTabs).
+function dedupeAllTabs() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const tz = ss.getSpreadsheetTimeZone();
+  Object.keys(TAB_PREFIX).forEach(function (community) {
+    const sheet = ss.getSheetByName(TAB_PREFIX[community]);
+    if (!sheet || sheet.getLastRow() < 2) return;
+    const vals = sheet.getDataRange().getValues();
+    const byDate = {};
+    for (let i = 1; i < vals.length; i++) {
+      const d = normDate_(vals[i][0], tz);
+      if (!d) continue;
+      let obj = {};
+      try { obj = vals[i][1] ? JSON.parse(vals[i][1]) : {}; } catch (e) { obj = {}; }
+      byDate[d] = byDate[d] ? mergeNonEmpty_(byDate[d], obj) : obj;
+    }
+    const dates = Object.keys(byDate).sort();
+    const out = dates.map(function (d) {
+      const j = Object.assign({}, byDate[d]); j.date = d;
+      return [d, JSON.stringify(j), new Date().toISOString()];
+    });
+    sheet.getRange(2, 1, sheet.getLastRow() - 1, 3).clearContent();
+    if (out.length) {
+      sheet.getRange(2, 1, out.length, 1).setNumberFormat('@');
+      sheet.getRange(2, 1, out.length, 3).setValues(out);
+    }
+    Logger.log(TAB_PREFIX[community] + ': ' + (vals.length - 1) + ' rows -> ' + out.length + ' dates');
+  });
+}
+
 function writeRow(ss, sheetName, data) {
   let sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
@@ -113,11 +175,14 @@ function writeRow(ss, sheetName, data) {
     sheet.getRange(1, 1, 1, 3).setFontWeight('bold');
   }
 
+  // date-merge 坑修复: normalize both sides for the lookup; pin the date cell to text
+  // on write so it can never be re-coerced to a Date again.
+  const tz = ss.getSpreadsheetTimeZone();
   const allVals = sheet.getDataRange().getValues();
   let rowIdx = -1;
   let existing = null;
   for (let i = 1; i < allVals.length; i++) {
-    if (allVals[i][0] === data.date) {
+    if (normDate_(allVals[i][0], tz) === data.date) {
       rowIdx = i + 1;
       try {
         existing = allVals[i][1] ? JSON.parse(allVals[i][1]) : null;
@@ -130,11 +195,9 @@ function writeRow(ss, sheetName, data) {
 
   const merged = mergeRow(existing, data);
   const now = new Date().toLocaleString('en-GB');
-  if (rowIdx > 0) {
-    sheet.getRange(rowIdx, 1, 1, 3).setValues([[data.date, JSON.stringify(merged), now]]);
-  } else {
-    sheet.appendRow([data.date, JSON.stringify(merged), now]);
-  }
+  const targetRow = rowIdx > 0 ? rowIdx : sheet.getLastRow() + 1;
+  sheet.getRange(targetRow, 1).setNumberFormat('@');   // date column = plain text
+  sheet.getRange(targetRow, 1, 1, 3).setValues([[data.date, JSON.stringify(merged), now]]);
 
   return { ok: true, date: data.date };
 }
