@@ -257,11 +257,16 @@ function readAll(ss, sheetName) {
   const sheet = ss.getSheetByName(sheetName);
   if (!sheet) return [];
   const vals = sheet.getDataRange().getValues();
+  // Future-dated rows are dirty/test data (e.g. a 2099-12-31 probe). Skip them so they
+  // can't hijack "last submitted" in any reader (HTML tool, CM view, lark-reporter).
+  const today = Utilities.formatDate(new Date(), ss.getSpreadsheetTimeZone(), 'yyyy-MM-dd');
   const reports = [];
   for (let i = 1; i < vals.length; i++) {
     if (vals[i][1]) {
       try {
-        reports.push(JSON.parse(vals[i][1]));
+        const r = JSON.parse(vals[i][1]);
+        if (r.date && String(r.date).slice(0, 10) > today) continue;  // skip future rows
+        reports.push(r);
       } catch(err) {}
     }
   }

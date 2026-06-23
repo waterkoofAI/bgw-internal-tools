@@ -1038,7 +1038,12 @@ function mergeInto(c, remoteArr) {
   const map = {};
   allData[c].forEach(r => { map[r.date] = r; });
   remoteArr.forEach(r => { map[r.date] = r; });
-  allData[c] = Object.values(map).sort((a,b) => a.date.localeCompare(b.date));
+  // Drop future-dated rows (dirty/test data, e.g. a 2099-12-31 probe row) so they can't
+  // hijack "Last submitted" / charts. Keep today (<=) so a same-day report still shows.
+  const _t = today();
+  allData[c] = Object.values(map)
+    .filter(r => r.date && r.date <= _t)
+    .sort((a,b) => a.date.localeCompare(b.date));
   saveLocal(c);
 }
 
