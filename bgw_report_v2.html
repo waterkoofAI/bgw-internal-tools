@@ -595,9 +595,12 @@ window.onload = function() {
   gasUrl = localStorage.getItem('bgw_gas_url') || '';
   if (gasUrl) document.getElementById('gas-url').value = gasUrl;
 
+  const _loadToday = today();
   ALL_COMS.forEach(c => {
     const s = localStorage.getItem('bgw_data_' + c);
-    if (s) try { allData[c] = JSON.parse(s); } catch(e) {}
+    // Drop future-dated dirty rows (e.g. a 2099 probe) right at load, so they never enter
+    // allData and can't render as "Last submitted" before the first sync runs.
+    if (s) try { allData[c] = JSON.parse(s).filter(r => r && r.date && r.date <= _loadToday); } catch(e) {}
   });
 
   document.getElementById('mod-date').value = today();
@@ -1263,7 +1266,10 @@ async function submitReport() {
 function renderLastSubmitInfo() {
   const el = document.getElementById('last-submit-info');
   if (!el) return;
-  const records = allData[com];
+  const _t = today();
+  // Filter future-dated dirty rows (e.g. a 2099 probe) at RENDER time, not just on sync —
+  // page-load renders from localStorage before the first sync, so display must guard too.
+  const records = (allData[com] || []).filter(r => r.date && r.date <= _t);
   if (records.length === 0) { el.textContent = ''; return; }
   const last = records[records.length - 1];
   el.textContent = `Last submitted: ${last.date} by ${last.mod || '—'}`;
