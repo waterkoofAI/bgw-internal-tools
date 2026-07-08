@@ -1,0 +1,180 @@
+{
+ "generated_at": "2026-07-07T16:43:26Z",
+ "note": "views_daily=whop chart tooltip 真值; spend_daily=实付按提交日(近似,口径≠Gross); creators_cum=CSV 精确; viral_cum=以当前views回溯(近似)。只用于首个 GAS 快照日之前; 30 天后自然滑出可删。 | 2026-07-08: creators_cum 全部替换为 joined 口径(Users 页 293 系, 全量翻页重构), 与 KPI 口径一致, 曲线无跳变。",
+ "days": {
+  "2026-06-11": {
+   "spend_daily": 32.6,
+   "creators_cum": 200,
+   "viral_cum": 5,
+   "views_daily": 54847
+  },
+  "2026-06-12": {
+   "spend_daily": 13.66,
+   "creators_cum": 202,
+   "viral_cum": 9,
+   "views_daily": 67993
+  },
+  "2026-06-13": {
+   "spend_daily": 0.0,
+   "creators_cum": 203,
+   "viral_cum": 12,
+   "views_daily": 38170
+  },
+  "2026-06-14": {
+   "spend_daily": 0,
+   "creators_cum": 204,
+   "viral_cum": 12,
+   "views_daily": 18497
+  },
+  "2026-06-15": {
+   "spend_daily": 12.51,
+   "creators_cum": 207,
+   "viral_cum": 13,
+   "views_daily": 50080
+  },
+  "2026-06-16": {
+   "spend_daily": 272.01,
+   "creators_cum": 210,
+   "viral_cum": 33,
+   "views_daily": 293872
+  },
+  "2026-06-17": {
+   "spend_daily": 2.43,
+   "creators_cum": 217,
+   "viral_cum": 37,
+   "views_daily": 150875
+  },
+  "2026-06-18": {
+   "spend_daily": 0,
+   "creators_cum": 220,
+   "viral_cum": 37,
+   "views_daily": 66858
+  },
+  "2026-06-19": {
+   "spend_daily": 0,
+   "creators_cum": 221,
+   "viral_cum": 37,
+   "views_daily": 45254
+  },
+  "2026-06-20": {
+   "spend_daily": 0,
+   "creators_cum": 222,
+   "viral_cum": 37,
+   "views_daily": 52472
+  },
+  "2026-06-21": {
+   "spend_daily": 0,
+   "creators_cum": 229,
+   "viral_cum": 37,
+   "views_daily": 42995
+  },
+  "2026-06-22": {
+   "spend_daily": 0.0,
+   "creators_cum": 240,
+   "viral_cum": 37,
+   "views_daily": 41272
+  },
+  "2026-06-23": {
+   "spend_daily": 4.85,
+   "creators_cum": 244,
+   "viral_cum": 39,
+   "views_daily": 31723
+  },
+  "2026-06-24": {
+   "spend_daily": 0.0,
+   "creators_cum": 249,
+   "viral_cum": 39,
+   "views_daily": 31928
+  },
+  "2026-06-25": {
+   "spend_daily": 0.0,
+   "creators_cum": 252,
+   "viral_cum": 39,
+   "views_daily": 20256
+  },
+  "2026-06-26": {
+   "spend_daily": 0.0,
+   "creators_cum": 255,
+   "viral_cum": 39,
+   "views_daily": 21628
+  },
+  "2026-06-27": {
+   "spend_daily": 0.0,
+   "creators_cum": 259,
+   "viral_cum": 39,
+   "views_daily": 16320
+  },
+  "2026-06-28": {
+   "spend_daily": 25.75,
+   "creators_cum": 269,
+   "viral_cum": 43,
+   "views_daily": 21444
+  },
+  "2026-06-29": {
+   "spend_daily": 350.08,
+   "creators_cum": 277,
+   "viral_cum": 48,
+   "views_daily": 1134985
+  },
+  "2026-06-30": {
+   "spend_daily": 756.99,
+   "creators_cum": 285,
+   "viral_cum": 58,
+   "views_daily": 472084
+  },
+  "2026-07-01": {
+   "spend_daily": 26.4,
+   "creators_cum": 288,
+   "viral_cum": 60,
+   "views_daily": 210002
+  },
+  "2026-07-02": {
+   "spend_daily": 0.0,
+   "creators_cum": 290,
+   "viral_cum": 62,
+   "views_daily": 106228
+  },
+  "2026-07-03": {
+   "spend_daily": 0.0,
+   "creators_cum": 291,
+   "viral_cum": 62,
+   "views_daily": 56118
+  },
+  "2026-07-04": {
+   "spend_daily": 0.0,
+   "creators_cum": 291,
+   "viral_cum": 62,
+   "views_daily": 42461
+  },
+  "2026-07-05": {
+   "spend_daily": 0.0,
+   "creators_cum": 292,
+   "viral_cum": 62,
+   "views_daily": 31638
+  },
+  "2026-07-06": {
+   "spend_daily": 0.0,
+   "creators_cum": 293,
+   "viral_cum": 62,
+   "views_daily": 25307
+  },
+  "2026-07-07": {
+   "spend_daily": 0.0,
+   "creators_cum": 293,
+   "viral_cum": 62,
+   "views_daily": 13997
+  },
+  "2026-06-08": {
+   "views_daily": 0,
+   "creators_cum": 192
+  },
+  "2026-06-09": {
+   "views_daily": 309005,
+   "creators_cum": 193
+  },
+  "2026-06-10": {
+   "views_daily": 28387,
+   "creators_cum": 196
+  }
+ }
+}

@@ -253,6 +253,7 @@ input:disabled{background:var(--bg);color:var(--text2);cursor:not-allowed;opacit
     <button class="ctab" id="ctab-bot_airdrop" onclick="setCom('bot_airdrop',this)">🤖 Airdrop Bot</button>
     <span style="display:inline-block;width:1px;height:18px;background:var(--border);margin:0 4px;align-self:center"></span>
     <button class="ctab" id="ctab-issues" onclick="setCom('issues',this)">📋 Top Issues</button>
+    <button class="ctab" id="ctab-whop" onclick="setCom('whop',this)">🎬 Whop UGC</button>
     <button class="cfg-toggle" onclick="toggleCfg()">⚙ Config</button>
   </div>
 
@@ -476,6 +477,51 @@ input:disabled{background:var(--bg);color:var(--text2);cursor:not-allowed;opacit
   </div>
 
   <!-- TOP ISSUES VIEW -->
+  <!-- ── Whop UGC view (2026-07-08): Ferdi GAS whop_ugc_daily 直读; token 存
+       localStorage(bgw_ferdi_token), 绝不进源码 — 公开 Pages 零凭据暴露 ── -->
+  <div id="whop-view" style="display:none">
+    <div id="whop-token-setup" style="display:none;background:var(--card,#fff);border:1px solid var(--border,#e5e3f5);border-radius:10px;padding:18px;margin-bottom:14px">
+      <div style="font-weight:700;margin-bottom:6px">🎬 Whop UGC 数据未配置</div>
+      <div style="font-size:12px;color:var(--text2,#666);margin-bottom:10px">
+        输入 Ferdi GAS 查询 token(问 Downcen 要)。只存本浏览器 localStorage, 不进页面源码。</div>
+      <input type="password" id="whop-token-input" placeholder="query token"
+             style="padding:7px 10px;border:1px solid var(--border,#ccc);border-radius:6px;width:220px">
+      <button onclick="saveWhopToken()" style="padding:7px 14px;border:none;border-radius:6px;background:#E8590C;color:#fff;cursor:pointer;font-family:inherit">保存并加载</button>
+    </div>
+    <div id="whop-body" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
+        <div style="font-size:15px;font-weight:700">Whop UGC · Content Rewards <span id="whop-date" style="font-size:12px;color:var(--text2,#888);font-weight:400"></span></div>
+        <div style="font-size:11px;color:var(--text2,#888)"><a href="#" onclick="clearWhopToken();return false" style="color:inherit">重置 token</a></div>
+      </div>
+      <div id="whop-kpis" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div class="whop-panel"><div class="whop-ptitle">Views · 日增+累计</div><div style="height:170px;position:relative"><canvas id="whop-ch-views"></canvas></div></div>
+        <div class="whop-panel"><div class="whop-ptitle">花费 · 日增+累计 ($)</div><div style="height:170px;position:relative"><canvas id="whop-ch-spend"></canvas></div></div>
+        <div class="whop-panel"><div class="whop-ptitle">合作创作者 · 累计(加入口径)</div><div style="height:170px;position:relative"><canvas id="whop-ch-creators"></canvas></div></div>
+        <div class="whop-panel"><div class="whop-ptitle">爆款(&gt;10k views) · 累计</div><div style="height:170px;position:relative"><canvas id="whop-ch-viral"></canvas></div></div>
+      </div>
+      <div id="whop-total-table" style="margin-bottom:12px"></div>
+      <div id="whop-campaigns"></div>
+      <div style="font-size:10px;color:var(--text2,#999);margin-top:8px;line-height:1.6">
+        花费=现役 campaign Paid Out+平台外手工项; 创作者=加入过 campaign 的(whop Users 页);
+        爆款含 archived campaign; CPM=花费/曝光×1000(定价 $2.00/1k)。数据每日 08:30 采集。</div>
+    </div>
+    <div id="whop-error" style="display:none;background:#fdf3e7;border:1px solid #f0c48f;border-radius:8px;padding:12px;font-size:12px;color:#92400e"></div>
+  </div>
+  <style>
+    .whop-panel{background:var(--card,#fff);border:1px solid var(--border,#e5e3f5);border-radius:10px;padding:12px}
+    .whop-ptitle{font-size:12px;font-weight:600;color:var(--text2,#5c5a6e);margin-bottom:8px}
+    .whop-kpi{background:var(--card,#fff);border:1px solid var(--border,#e5e3f5);border-radius:10px;padding:12px}
+    .whop-kpi-l{font-size:10px;color:var(--text2,#9896a8);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;font-weight:600}
+    .whop-kpi-v{font-size:19px;font-weight:700;font-family:monospace}
+    .whop-kpi-d{font-size:11px;margin-top:2px;font-weight:600}
+    .whop-tbl{width:100%;border-collapse:collapse;font-size:12px}
+    .whop-tbl th{text-align:right;font-size:10px;color:var(--text2,#9896a8);font-weight:700;text-transform:uppercase;padding:5px 8px;border-bottom:1px solid var(--border,#e5e3f5)}
+    .whop-tbl th:first-child,.whop-tbl td:first-child{text-align:left}
+    .whop-tbl td{text-align:right;padding:5px 8px;border-bottom:1px solid var(--border,#f3f2f8);font-family:monospace}
+    .whop-badge{font-size:9px;font-weight:700;border-radius:4px;padding:2px 6px;margin-left:6px;font-family:'DM Sans',sans-serif}
+  </style>
+
   <div id="issues-view" style="display:none">
 
     <div class="panel">
@@ -587,6 +633,7 @@ const ALL_COMS = ['en','cn','pred','bot_prediction','bot_airdrop'];
 const BOT_COMS = ['bot_prediction','bot_airdrop'];
 function isBotCom(c) { return BOT_COMS.includes(c); }
 function isIssuesCom(c) { return c === 'issues'; }
+function isWhopCom(c) { return c === 'whop'; }
 
 // ─────────────────────────────────────────────
 // INIT
@@ -660,10 +707,13 @@ function setMode(m) {
 function updateViewVisibility() {
   const isBot = isBotCom(com);
   const isIssues = isIssuesCom(com);
-  const isCommunity = !isBot && !isIssues;
+  const isWhop = isWhopCom(com);
+  const isCommunity = !isBot && !isIssues && !isWhop;
   document.getElementById('mod-view').style.display = (mode === 'mod' && isCommunity) ? '' : 'none';
   document.getElementById('cm-view').style.display = (mode === 'cm' && isCommunity) ? '' : 'none';
   document.getElementById('bot-view').style.display = isBot ? '' : 'none';
+  const wv = document.getElementById('whop-view');
+  if (wv) wv.style.display = isWhop ? '' : 'none';
   const iv = document.getElementById('issues-view');
   if (iv) iv.style.display = isIssues ? '' : 'none';
   const btnMod = document.getElementById('btn-mod');
@@ -676,6 +726,12 @@ function setCom(c, btn) {
   com = c;
   document.querySelectorAll('.ctab').forEach(t => t.classList.remove('active'));
   if (btn) btn.classList.add('active');
+
+  if (isWhopCom(c)) {
+    updateViewVisibility();
+    renderWhop();
+    return;
+  }
 
   if (isIssuesCom(c)) {
     updateViewVisibility();
@@ -2506,6 +2562,239 @@ function showToast(msg, type) {
 
 // ─────────────────────────────────────────────
 // INITIAL SCORE TABLE
+// ═════════════════════════════════════════════════════════════════
+// Whop UGC tab (2026-07-08) — Ferdi GAS whop_ugc_daily 直读。
+// token 只存 localStorage('bgw_ferdi_token'), 绝不出现在源码(公开 Pages)。
+// 口径与 lark UGC 卡完全一致(reporter/ugc_jobs.py 的 JS 翻译):
+//   creators ALL=Users 页加入数 / campaign=获付 participants;
+//   花费=Paid Out+手工项; CPM=花费/曝光×1000; 爆款>10k 含 archived。
+// 30 天序列: 快照日差 + whop_ugc_backfill.json(同 repo, 冷启动历史)。
+// ═════════════════════════════════════════════════════════════════
+const WHOP_GAS_URL = 'https://script.google.com/macros/s/AKfycbzqpETgg679-zy1W5ZwJupvlhCeQbemLJ55NPDQeHCfVbkIKVKxarx8DaEcbuTYL5GXtw/exec';
+const WHOP_SHEET = 'whop_ugc_daily';
+const WHOP_DAYS = 30;
+const WHOP_GREEN = '#1a8a5f', WHOP_RED = '#c0392b', WHOP_GREY = '#9896a8';
+let whopCharts = {};
+let whopLoaded = false;
+
+function whopToken() { return localStorage.getItem('bgw_ferdi_token') || ''; }
+function saveWhopToken() {
+  const v = document.getElementById('whop-token-input').value.trim();
+  if (!v) return;
+  localStorage.setItem('bgw_ferdi_token', v);
+  whopLoaded = false;
+  renderWhop();
+}
+function clearWhopToken() {
+  localStorage.removeItem('bgw_ferdi_token');
+  whopLoaded = false;
+  renderWhop();
+}
+
+function whopNum(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const f = parseFloat(String(v).replace(/[$,]/g, ''));
+  return isNaN(f) ? null : f;
+}
+function whopDate(v) {
+  const s = String(v || '').trim();
+  return (s.length >= 10 && s[4] === '-' && s[7] === '-') ? s.slice(0, 10) : s.slice(0, 10);
+}
+function whopFmt(v, money) {
+  if (v === null || v === undefined) return '—';
+  return money ? '$' + v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+               : Math.round(v).toLocaleString('en-US');
+}
+function whopDelta(cur, prev) {
+  if (cur === null || prev === null || cur === undefined || prev === undefined) return null;
+  return Math.round((cur - prev) * 100) / 100;
+}
+function whopDeltaHtml(d, prev, money) {
+  if (d === null) return `<span style="color:${WHOP_GREY}">—</span>`;
+  const color = d === 0 ? WHOP_GREY : (d > 0 ? WHOP_GREEN : WHOP_RED);
+  const sign = d >= 0 ? '+' : '-';
+  const body = money ? '$' + Math.abs(d).toLocaleString('en-US', {minimumFractionDigits: 2}) : Math.abs(d).toLocaleString('en-US');
+  let pct = '';
+  if (prev) pct = ' (' + (d >= 0 ? '+' : '') + (d / prev * 100).toFixed(1) + '%)';
+  return `<span style="color:${color}">${sign}${body}${pct}</span>`;
+}
+
+async function whopFetchRows() {
+  const url = WHOP_GAS_URL + '?action=get&sheet_name=' + WHOP_SHEET + '&token=' + encodeURIComponent(whopToken());
+  const res = await fetch(url, {redirect: 'follow'});
+  const data = await res.json();
+  let rows = data.rows || data || [];
+  if (!Array.isArray(rows) || !rows.length) return [];
+  // 2D array + 表头行(实测契约) → dict; 容错 dict rows
+  if (Array.isArray(rows[0])) {
+    const header = rows[0].map(h => String(h).trim());
+    if (!header.includes('date')) throw new Error('foreign tab / token 无效');
+    rows = rows.slice(1).map(r => Object.fromEntries(header.map((h, i) => [h, r[i]])));
+  }
+  return rows.map(r => ({
+    date: whopDate(r.date), campaign: String(r.campaign || '').trim(),
+    views: whopNum(r.views), creators: whopNum(r.creators), viral: whopNum(r.viral),
+    paid_out: whopNum(r.paid_out), participants: whopNum(r.participants),
+    status: String(r.status || '').trim().toUpperCase(),
+  })).filter(r => r.date && r.campaign);
+}
+
+async function whopBackfill() {
+  try {
+    const res = await fetch('whop_ugc_backfill.json?t=' + Date.now());
+    return (await res.json()).days || {};
+  } catch (e) { return {}; }
+}
+
+function whopCpm(row) {
+  if (!row || row.paid_out === null || !row.views) return null;
+  return Math.round(row.paid_out / row.views * 1000 * 100) / 100;
+}
+
+async function renderWhop() {
+  const setup = document.getElementById('whop-token-setup');
+  const body = document.getElementById('whop-body');
+  const errBox = document.getElementById('whop-error');
+  errBox.style.display = 'none';
+  if (!whopToken()) {
+    setup.style.display = '';
+    body.style.display = 'none';
+    return;
+  }
+  setup.style.display = 'none';
+  body.style.display = '';
+  if (whopLoaded) return; // charts 已渲染, tab 切换不重拉
+
+  let rows, backfill;
+  try {
+    [rows, backfill] = await Promise.all([whopFetchRows(), whopBackfill()]);
+  } catch (e) {
+    body.style.display = 'none';
+    errBox.style.display = '';
+    errBox.textContent = '加载失败: ' + e.message + '(token 错误/网络问题? 点右上重置 token 重试)';
+    setup.style.display = '';
+    return;
+  }
+  // ALL 行含 synthetic 基线(7-07 合成行, 环比分母需要它)
+  const allRows = rows.filter(r => r.campaign === 'ALL')
+                      .sort((a, b) => a.date < b.date ? -1 : 1);
+  if (!allRows.length) {
+    errBox.style.display = '';
+    errBox.textContent = '暂无快照数据(采集脚本还没写入?)';
+    return;
+  }
+  const byDate = {};
+  allRows.forEach(r => { byDate[r.date] = r; });
+  const latest = allRows[allRows.length - 1];
+  const prevDateStr = (d => { const t = new Date(d + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() - 1); return t.toISOString().slice(0, 10); })(latest.date);
+  const prevAll = byDate[prevDateStr] || null;
+  document.getElementById('whop-date').textContent = latest.date + (prevAll ? '(环比 vs ' + prevDateStr + ')' : '');
+
+  // ── KPI 行 ──
+  const cpmNow = whopCpm(latest), cpmPrev = whopCpm(prevAll);
+  const kpis = [
+    ['曝光量 30d', latest.views, prevAll && prevAll.views, false],
+    ['创作者 加入', latest.creators, prevAll && prevAll.creators, false],
+    ['花费 Paid Out', latest.paid_out, prevAll && prevAll.paid_out, true],
+    ['CPM 实际', cpmNow, cpmPrev, true],
+    ['爆款 >10k', latest.viral, prevAll && prevAll.viral, false],
+  ];
+  document.getElementById('whop-kpis').innerHTML = kpis.map(([l, v, p, money]) => {
+    const d = whopDelta(v, p === undefined ? null : p);
+    return `<div class="whop-kpi"><div class="whop-kpi-l">${l}</div>
+      <div class="whop-kpi-v">${whopFmt(v, money)}</div>
+      <div class="whop-kpi-d">${whopDeltaHtml(d, p, money)}</div></div>`;
+  }).join('');
+
+  // ── 30 天序列(快照日差 + backfill) ──
+  const labels = [], vDaily = [], vCum = [], sDaily = [], sCum = [], cCum = [], viCum = [];
+  const end = new Date(latest.date + 'T00:00:00Z');
+  const firstSnap = allRows[0].date;
+  for (let i = WHOP_DAYS - 1; i >= 0; i--) {
+    const d = new Date(end); d.setUTCDate(d.getUTCDate() - i);
+    const ds = d.toISOString().slice(0, 10);
+    const dp = new Date(d); dp.setUTCDate(dp.getUTCDate() - 1);
+    const dps = dp.toISOString().slice(0, 10);
+    labels.push(ds.slice(5));
+    const row = byDate[ds], rowPrev = byDate[dps], bf = backfill[ds] || {};
+    if (row) {
+      cCum.push(row.creators); viCum.push(row.viral);
+      vDaily.push(rowPrev ? whopDelta(row.views, rowPrev.views) : whopNum(bf.views_daily));
+      sDaily.push(rowPrev ? whopDelta(row.paid_out, rowPrev.paid_out) : whopNum(bf.spend_daily));
+    } else if (ds < firstSnap && backfill[ds]) {
+      cCum.push(whopNum(bf.creators_cum)); viCum.push(whopNum(bf.viral_cum));
+      vDaily.push(whopNum(bf.views_daily)); sDaily.push(whopNum(bf.spend_daily));
+    } else {
+      cCum.push(null); viCum.push(null); vDaily.push(null); sDaily.push(null);
+    }
+  }
+  let acc = 0, started = false;
+  vDaily.forEach(v => { if (v !== null) { started = true; acc += v; } vCum.push(started ? acc : null); });
+  acc = 0; started = false;
+  sDaily.forEach(v => { if (v !== null) { started = true; acc += v; } sCum.push(started ? Math.round(acc * 100) / 100 : null); });
+
+  // ── charts(重复渲染先 destroy) ──
+  Object.values(whopCharts).forEach(c => c.destroy());
+  whopCharts = {};
+  const xt = {ticks: {font: {size: 9}, maxRotation: 0, autoSkip: true}, grid: {display: false}};
+  const mkDual = (id, daily, cum, barColor, lineColor) => new Chart(document.getElementById(id), {
+    type: 'bar',
+    data: {labels, datasets: [
+      {data: daily, backgroundColor: barColor, borderRadius: 2, yAxisID: 'y'},
+      {data: cum, type: 'line', borderColor: lineColor, borderWidth: 2, pointRadius: 0, tension: .25, spanGaps: true, yAxisID: 'y2'},
+    ]},
+    options: {responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: {legend: {display: false}},
+      scales: {x: xt, y: {beginAtZero: true, position: 'left', ticks: {font: {size: 9}}},
+               y2: {beginAtZero: true, position: 'right', grid: {display: false}, ticks: {font: {size: 9}, color: lineColor}}}},
+  });
+  const mkLine = (id, data, color, bg) => new Chart(document.getElementById(id), {
+    type: 'line',
+    data: {labels, datasets: [{data, borderColor: color, backgroundColor: bg, fill: true, borderWidth: 2, pointRadius: 1.5, tension: .3, spanGaps: true}]},
+    options: {responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: {legend: {display: false}},
+      scales: {x: xt, y: {beginAtZero: true, ticks: {font: {size: 9}}}}},
+  });
+  whopCharts.views = mkDual('whop-ch-views', vDaily, vCum, 'rgba(232,89,12,.55)', '#B33F00');
+  whopCharts.spend = mkDual('whop-ch-spend', sDaily, sCum, 'rgba(26,138,95,.55)', '#0d5c3f');
+  whopCharts.creators = mkLine('whop-ch-creators', cCum, '#534AB7', 'rgba(83,74,183,.07)');
+  whopCharts.viral = mkLine('whop-ch-viral', viCum, '#D4537E', 'rgba(212,83,126,.07)');
+
+  // ── 合计表 + campaign 明细 ──
+  const campCur = rows.filter(r => r.date === latest.date && r.campaign !== 'ALL');
+  const campPrev = {};
+  rows.filter(r => r.date === prevDateStr && r.campaign !== 'ALL').forEach(r => { campPrev[r.campaign] = r; });
+  campCur.sort((a, b) => {
+    const aa = a.status === 'ARCHIVED' ? 1 : 0, bb = b.status === 'ARCHIVED' ? 1 : 0;
+    return aa - bb || (b.views || 0) - (a.views || 0);
+  });
+  const badgeColor = {ACTIVE: ['#1a8a5f', '#e7f5ef'], PAUSED: ['#b05b0a', '#fdf3e7'],
+                      PENDING: ['#8a6d00', '#fdf8e0'], ARCHIVED: ['#6b6979', '#efeef4']};
+  const rowHtml = (name, cur, prev, isAll, status) => {
+    const cshow = isAll ? cur.creators : cur.participants;
+    const cshowP = prev ? (isAll ? prev.creators : prev.participants) : null;
+    const cpm = whopCpm(cur), cpmP = whopCpm(prev);
+    const [fg, bg] = badgeColor[status] || ['#6b6979', '#efeef4'];
+    const badge = status ? `<span class="whop-badge" style="color:${fg};background:${bg}">${status}</span>` : '';
+    const cells = [
+      [cur.views, prev && prev.views, false],
+      [cshow, cshowP, false],
+      [cur.paid_out, prev && prev.paid_out, true],
+      [cpm, cpmP, true],
+      [cur.viral, prev && prev.viral, false],
+    ].map(([v, p, m]) => `<td>${whopFmt(v, m)}<br>${whopDeltaHtml(whopDelta(v, p === undefined ? null : p), p, m)}</td>`).join('');
+    return `<tr><td>${name}${badge}</td>${cells}</tr>`;
+  };
+  const thead = `<tr><th>Campaign</th><th>曝光</th><th>创作者</th><th>花费</th><th>CPM</th><th>爆款</th></tr>`;
+  document.getElementById('whop-total-table').innerHTML =
+    `<div class="whop-panel"><div class="whop-ptitle">全部 Campaign 合计(创作者=加入)</div>
+     <table class="whop-tbl">${thead}${rowHtml('ALL', latest, prevAll, true, '')}</table></div>`;
+  document.getElementById('whop-campaigns').innerHTML =
+    `<div class="whop-panel"><div class="whop-ptitle">各 Campaign 明细(创作者=获付)</div>
+     <table class="whop-tbl">${thead}${campCur.map(c => rowHtml(c.campaign, c, campPrev[c.campaign] || null, false, c.status)).join('')}</table></div>`;
+  whopLoaded = true;
+}
+
 // ─────────────────────────────────────────────
 updateComUI();
 </script>
