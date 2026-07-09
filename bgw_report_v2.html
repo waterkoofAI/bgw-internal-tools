@@ -2631,12 +2631,21 @@ async function whopFetchRows() {
     if (!header.includes('date')) throw new Error('foreign tab / token 无效');
     rows = rows.slice(1).map(r => Object.fromEntries(header.map((h, i) => [h, r[i]])));
   }
-  return rows.map(r => ({
+  const mapped = rows.map(r => ({
     date: whopDate(r.date), campaign: String(r.campaign || '').trim(),
     views: whopNum(r.views), creators: whopNum(r.creators), viral: whopNum(r.viral),
     paid_out: whopNum(r.paid_out), participants: whopNum(r.participants),
     status: String(r.status || '').trim().toUpperCase(),
+    _cap: String(r.captured_at || '').trim(),
   })).filter(r => r.date && r.campaign);
+  // 同 (date,campaign) 取最新: 同日重采=追加新版本(append-only), 真实行 > synthetic
+  const best = {};
+  mapped.forEach(r => {
+    const key = r.date + '|' + r.campaign;
+    const rank = (r._cap.startsWith('synthetic') ? '0' : '1') + '|' + r._cap;
+    if (!best[key] || rank >= best[key].rank) best[key] = {rank, r};
+  });
+  return Object.values(best).map(x => x.r);
 }
 
 async function whopBackfill() {
