@@ -2623,8 +2623,13 @@ async function whopFetchRows() {
   const url = WHOP_GAS_URL + '?action=get&sheet_name=' + WHOP_SHEET + '&token=' + encodeURIComponent(whopToken());
   const res = await fetch(url, {redirect: 'follow'});
   const data = await res.json();
-  let rows = data.rows || data || [];
-  if (!Array.isArray(rows) || !rows.length) return [];
+  let rows = data.rows || [];
+  if (!Array.isArray(rows)) rows = [];
+  if (!rows.length) {
+    // token 错时 GAS 返回 error 对象(无 rows) — 别误报成"暂无快照数据"
+    const hint = (data && (data.error || data.msg)) ? String(data.error || data.msg) : '';
+    throw new Error(hint ? ('GAS: ' + hint.slice(0, 80)) : 'token 无效或表为空 — 点右上"重置 token"重新输入');
+  }
   // 2D array + 表头行(实测契约) → dict; 容错 dict rows
   if (Array.isArray(rows[0])) {
     const header = rows[0].map(h => String(h).trim());
